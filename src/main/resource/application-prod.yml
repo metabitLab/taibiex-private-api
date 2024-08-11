@@ -1,0 +1,142 @@
+#测试环境
+server:
+  port: 8803
+
+spring:
+  datasource:
+    oms.url: jdbc:mysql://app-db-uppers.cguwkv5gfbv6.ap-southeast-1.rds.amazonaws.com/inter_app?characterEncoding=utf-8&serverTimezone=UTC
+    oms.username: house
+    oms.password: xxxxxxxxxxxxxxx
+    oms.type: com.alibaba.druid.pool.DruidDataSource
+    #    数据源其他配置
+    oms.initialSize: 5
+    oms.minIdle: 5
+    oms.maxActive: 20
+    oms.maxWait: 60000
+    oms.timeBetweenEvictionRunsMillis: 60000
+    oms.minEvictableIdleTimeMillis: 300000
+    oms.validationQuery: SELECT 1 FROM DUAL
+    oms.testWhileIdle: true
+    oms.testOnBorrow: false
+    oms.testOnReturn: false
+    oms.poolPreparedStatements: true
+    #   配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+    oms.filters: stat,wall˜
+    #    ,log4j
+    oms.maxPoolPreparedStatementPerConnectionSize: 20
+    oms.useGlobalDataSourceStat: true
+    oms.connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
+  redis:
+    host: 127.0.0.1
+    password: #F2tn*Cw3ry3yl=o6syNFTRedis
+    port: 6379
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+    open-in-view: false
+
+  security:
+    user:
+      name: interapp@abeyworld.com
+      password: abeyworldisgood
+      roles: USER
+
+
+app:
+  controller:
+    enabled: true
+
+  scheduling:
+    enabled: true # 启用定时任务
+
+  web3j:
+    address: https://interrpc.abeychain.com/
+    chainId: 179
+
+  knife4j: false # 不开启文档url
+  xracer:
+    receiving-address: ''
+
+abey:
+  contracts:
+    blockContractFlagSuffix: '' # 扫块进度名称后缀，可以单独对每个启动程序控制扫块进度
+    start: 6893192 # 6893192 land app start
+    step: 500
+    enabled: true
+    contractList: # 该名称不能修改，否则AbeyContractsConfig读取不到配置
+      - name: 'Upgrader'
+        address: '0x11aaEd3Cfb3A4bBfc77B637618F861Bc5C10Ec9A'
+        enabled: true
+      - name: 'Game2' # Game2
+        address: '0x4eAFca12ECC01776A917CA55305e148b2BECEadb'
+        enabled: true
+      - name: 'Game3' # Game3
+        address: '0xF9B9Ea0109E3aed224AB75ba9ae524dCD6686aa6'
+        enabled: true
+      - name: 'UpgradeCarModel' # 更新稀有度和速度
+        address: '0x696b26dB7B1F01db426b5683d5bf401d068d0D13'
+        enabled: true
+      - name: 'XracerRunes' # 符文
+        address: '0x8681A3C99051B6f790F25c87c725D28cef033cf8'
+        enabled: true
+      - name: 'ABEY-USDT'
+        address: '0xe59f75276c4ef762cbc0b9a0e7d0e185e2f979fb'
+        enabled: true
+      - name: 'ABEY-NOS'
+        address: '0x51dad317e4b352a559cc7cba82466682be126222'
+        enabled: true
+      - name: 'ITW-USDT'
+        address: '0x1d0164bbad735152d361051840dddd3f2f8e2cb0'
+        enabled: true
+      - name: 'NOS'
+        address: '0x6d0732aBd54e4290383dC509c5E8535878375977'
+        enabled: true
+      - name: 'ABEY'
+        address: '0x5b7109dd5F3cD041546e6c49A08f8d5D738A32cf'
+        enabled: true
+      - name: 'USDT'
+        address: '0x7286fd763bBd56CF278Dc311dE9A053E6837B62E'
+        enabled: true
+      - name: 'ITW'
+        address: '0x64F7e4B5B48654c45476ADbc7800a78D3f577C8d'
+        enabled: true
+      - name: 'XRACER_PAY_TOKEN'
+        address: '0xfF6198e3df74cA49282110934A3C0797490a2fab' # ORI
+        enabled: true
+      - name: 'MulitMintNFT'
+        address: '0x2566481Fc8D14a1ECCa12EA1d092D495a895b250'
+        enabled: false
+  keystore:
+    password: guokaipeng123
+    basePath: 'keystore' # resources下keystore存放的目录的路径
+
+runes:
+  # 第一轮符文/铭文最大发行量1000W个
+  rid1_max_count: 10_000_000
+
+web3j:
+  client-address: https://interrpc.abeychain.com
+  admin-client: true # to manage accounts, enable the admin client
+  httpTimeoutSeconds: 35
+
+aws:
+  s3:
+    accessKey: ''
+    secretKey: ''
+    bucket: ""
+    bizPath: ""
+    region: "ap-southeast-1"
+    sessionToken: null
+    aclEnable: False
+    maxSize: 1
+
+twitter:
+  server-url: 'https://api.twitter.com'
+  client:
+    id: 'endmMlZxX1RjOGhWeXA2RkVoRFU6MTpjaQ'
+    secret: 'LSrYyL_kIOjLlYzG32tjIwnReA2OvoNjiPjiymt8Sodt-K4woF'
+  redirect-url: 'https://app.abey.com/profile'

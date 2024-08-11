@@ -1,0 +1,31 @@
+spring:
+#  # 解决升级 Spring Boot 2.6后，因循环引用导致启动时报错的问题
+#  main:
+#    allow-circular-references: true
+  profiles:
+    active: dev
+    # active: test
+    # active: prod
+
+  # https://www.jianshu.com/p/6c9d943bda0c
+  servlet:
+    multipart:
+      # 上传一个文件最大值,默认1Mb
+      max-file-size: 5MB
+      # 上传多个文件最大值,50Mb,默认10Mb
+      max-request-size: 50MB
+
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: true # 在找不到当前系统对应的资源文档时，如果该属性为 true，则会默认查找当前系统对应的资源文档，否则就返回 null，返回 null 之后，最终又会调用到系统默认的 messages.properties 文档
+
+logging:
+  level:
+    com.app.mapper: debug
+
+  # 增加这个配置 appender file才会生成日志文件
+  #config: classpath:logback-${spring.profiles.active}.xml
+  #config: classpath:logback-prod.xml
+  config: classpath:log4j2.xml
+
