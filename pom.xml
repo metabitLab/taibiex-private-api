@@ -196,12 +196,8 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
-                    <include>**/keystore/*</include>
+                    <include>**/*.graphql</include>
                     <include>**/*.yml</include>
-                    <include>**/*.properties</include>
-                    <include>**/*.xml</include>
-                    <include>**/*.json</include>
-                    <include>*.json</include>
                 </includes>
             </resource>
         </resources>
