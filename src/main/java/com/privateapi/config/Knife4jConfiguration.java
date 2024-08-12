@@ -1,4 +1,4 @@
-package com.app.config;
+package com.privateapi.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
