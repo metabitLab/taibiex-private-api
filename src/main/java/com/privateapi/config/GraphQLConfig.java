@@ -6,9 +6,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+
+import com.privateapi.service.SomeQueryStrDataFetcher;
 
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
@@ -20,6 +23,9 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 
 @Configuration
 public class GraphQLConfig {
+
+  @Autowired
+  private SomeQueryStrDataFetcher someQueryStrDataFetcher;
   
   @Bean
   public GraphQL graphQL() throws IOException {
@@ -34,7 +40,10 @@ public class GraphQLConfig {
     TypeDefinitionRegistry typeRegistry = schemaParser.parse(schema);
     RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
         .type("Query", builder -> builder
-          .dataFetcher("hello", new StaticDataFetcher("world")))
+          .dataFetcher("hello", new StaticDataFetcher("world"))
+          .dataFetcher("world", new StaticDataFetcher("hello"))
+          .dataFetcher("someQueryStr", someQueryStrDataFetcher)
+        )
         .build();
     SchemaGenerator schemaGenerator = new SchemaGenerator();
     GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, runtimeWiring);

@@ -1,3 +1,9 @@
+# Root default Query
 type Query {
   hello: String
+  world: String
+
+  someQueryStr(id: ID!): String
 }
+
+scalar ID
