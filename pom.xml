@@ -39,6 +39,11 @@
 			<groupId>com.netflix.graphql.dgs</groupId>
 			<artifactId>graphql-dgs-spring-graphql-starter</artifactId>
 		</dependency>
+    <dependency>
+      <groupId>com.netflix.graphql.dgs.codegen</groupId>
+      <artifactId>graphql-dgs-codegen-shared-core</artifactId>
+      <version>6.2.2</version>
+    </dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -78,7 +83,7 @@
               <addGeneratedAnnotation>true</addGeneratedAnnotation>
             </configuration>
           </execution>
-					<!-- <execution>
+					<execution>
 						<id>dgs-codegen-subgraphs-client</id>
 						<goals>
 							<goal>generate</goal>
@@ -92,8 +97,13 @@
               <generateBoxedTypes>true</generateBoxedTypes>
               <generateClientApi>true</generateClientApi>
               <writeToFiles>true</writeToFiles>
+              <typeMapping>
+                <BigDecimal>java.math.BigDecimal</BigDecimal>
+                <BigInt>java.math.BigInteger</BigInt>
+                <Bytes>java.lang.String</Bytes>
+              </typeMapping>
 						</configuration>
-					</execution> -->
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
