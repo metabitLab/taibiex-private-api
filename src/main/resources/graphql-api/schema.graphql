@@ -1,0 +1,237 @@
+type Query {
+  token(chain: Chain!, address: String): Token
+}
+
+enum TokenStandard {
+  NATIVE
+  ERC20
+}
+
+enum Chain {
+  ARBITRUM
+  AVALANCHE
+  ETHEREUM
+  ETHEREUM_GOERLI
+  ETHEREUM_SEPOLIA
+  OPTIMISM
+  POLYGON
+  CELO
+  BNB
+  BASE
+  BLAST
+  UNKNOWN_CHAIN
+}
+
+enum Currency {
+  AUD
+  BRL
+  CAD
+  CNY
+  ETH
+  EUR
+  GBP
+  HKD
+  IDR
+  INR
+  JPY
+  MATIC
+  NGN
+  PKR
+  RUB
+  SGD
+  THB
+  TRY
+  UAH
+  USD
+  VND
+}
+
+enum SafetyLevel {
+  VERIFIED
+  MEDIUM_WARNING
+  STRONG_WARNING
+  BLOCKED
+}
+
+enum PriceSource {
+  SUBGRAPH_V2
+  SUBGRAPH_V3
+}
+
+enum HistoryDuration {
+  FIVE_MINUTE
+  HOUR
+  DAY
+  WEEK
+  MONTH
+  YEAR
+  MAX
+}
+
+enum ProtocolVersion {
+  V2
+  V3
+}
+
+enum PoolTransactionType {
+  SWAP
+  ADD
+  REMOVE
+}
+
+enum HighLow {
+  HIGH
+  LOW
+}
+
+interface IContract {
+  chain: Chain!
+  address: String
+}
+
+interface IAmount {
+  currency: Currency
+  value: Float!
+}
+
+type Token implements IContract {
+  id: ID!
+  chain: Chain!
+  address: String
+  standard: TokenStandard
+  decimals: Int
+  name: String
+  symbol: String
+  project: TokenProject
+  market(currency: Currency): TokenMarket
+  feeData: FeeData
+  v3Transactions(first: Int!, timestampCursor: Int): [PoolTransaction]
+  v2Transactions(first: Int!, timestampCursor: Int): [PoolTransaction]
+}
+
+type TokenProject {
+  id: ID!
+  name: String
+  tokens: [Token!]!
+  description: String
+  descriptionTranslations: DescriptionTranslations
+  twitterName: String
+  homepageUrl: String
+  logoUrl: String @deprecated(reason: "use logo")
+  logo: Image
+  smallLogo: Image @deprecated(reason: "use logo")
+  isSpam: Boolean
+  spamCode: Int
+  safetyLevel: SafetyLevel
+  markets(currencies: [Currency!]!): [TokenProjectMarket]
+}
+
+type TokenMarket {
+  id: ID!
+  token: Token!
+  price: Amount
+  priceSource: PriceSource!
+  totalValueLocked: Amount
+  fullyDilutedValuation: Amount
+  historicalVolume(duration: HistoryDuration!): [TimestampedAmount]
+  historicalTvl(duration: HistoryDuration!): [TimestampedAmount]
+  priceHistory(duration: HistoryDuration!): [TimestampedAmount]
+  ohlc(duration: HistoryDuration!): [TimestampedOhlc]
+
+  """  this volume is cumulative volume over the specified duration"""
+  volume(duration: HistoryDuration!): Amount
+  pricePercentChange(duration: HistoryDuration!): Amount
+  priceHighLow(duration: HistoryDuration!, highLow: HighLow!): Amount
+}
+
+type FeeData {
+  sellFeeBps: String
+  buyFeeBps: String
+}
+
+type PoolTransaction {
+  id: ID!
+  chain: Chain!
+  protocolVersion: ProtocolVersion!
+  type: PoolTransactionType!
+  hash: String!
+  timestamp: Int!
+  usdValue: Amount!
+  account: String!
+  token0: Token!
+  token0Quantity: String!
+  token1: Token!
+  token1Quantity: String!
+}
+
+type DescriptionTranslations {
+  id: ID!
+  descriptionZhHans: String
+  descriptionZhHant: String
+  descriptionNlNl: String
+  descriptionEnUs: String
+  descriptionFrFr: String
+  descriptionHiIn: String
+  descriptionIdId: String
+  descriptionJaJp: String
+  descriptionMsMy: String
+  descriptionPtPt: String
+  descriptionRuRu: String
+  descriptionEsEs: String
+  descriptionEs419: String
+  descriptionEsUs: String
+  descriptionThTh: String
+  descriptionTrTr: String
+  descriptionUkUa: String
+  descriptionUrPk: String
+  descriptionViVn: String
+}
+
+type Image {
+    id: ID!
+    url: String!
+    dimensions: Dimensions
+}
+
+type TokenProjectMarket {
+  id: ID!
+  tokenProject: TokenProject!
+  currency: Currency!
+  price: Amount
+  marketCap: Amount
+  fullyDilutedValuation: Amount
+  pricePercentChange24h: Amount
+  priceHigh52w: Amount
+  priceLow52w: Amount
+  priceHistory(duration: HistoryDuration!): [TimestampedAmount]
+  pricePercentChange(duration: HistoryDuration!): Amount
+  priceHighLow(duration: HistoryDuration!, highLow: HighLow!): Amount
+}
+
+type Amount implements IAmount {
+  id: ID!
+  currency: Currency
+  value: Float!
+}
+
+type TimestampedAmount implements IAmount {
+  id: ID!
+  currency: Currency
+  value: Float!
+  timestamp: Int!
+}
+
+type TimestampedOhlc {
+  id: ID!
+  timestamp: Int!
+  open: Amount!
+  high: Amount!
+  low: Amount!
+  close: Amount!
+}
+
+type Dimensions {
+  id: ID!
+  height: Float
+  width: Float
+}

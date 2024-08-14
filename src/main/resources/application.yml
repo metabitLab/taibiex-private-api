@@ -1,0 +1,7 @@
+server:
+  port: 8803
+
+dgs:
+  graphql:
+    schema-locations:
+      - classpath*:graphql-api/**/*.graphql

@@ -65,19 +65,35 @@
 				<artifactId>graphqlcodegen-maven-plugin</artifactId>
 				<version>1.50</version>
 				<executions>
-					<execution>
-						<id>dgs-codegen</id>
+          <execution>
+            <id>dgs-codegen-for-graphql</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <schemaPaths>
+                <param>src/main/resources/graphql-api/schema.graphql</param>
+              </schemaPaths>
+              <packageName>com.metabitlab.taibiex.privateapi.graphqlapi.codegen</packageName>
+              <addGeneratedAnnotation>true</addGeneratedAnnotation>
+            </configuration>
+          </execution>
+					<!-- <execution>
+						<id>dgs-codegen-subgraphs-client</id>
 						<goals>
 							<goal>generate</goal>
 						</goals>
 						<configuration>
 							<schemaPaths>
-								<param>src/main/resources/graphql-client</param>
+								<param>src/main/resources/subgraphs-client</param>
 							</schemaPaths>
-							<packageName>com.metabitlab.taibiex.privateapi.codegen</packageName>
+							<packageName>com.metabitlab.taibiex.privateapi.subgraphsclient.codegen</packageName>
 							<addGeneratedAnnotation>true</addGeneratedAnnotation>
+              <generateBoxedTypes>true</generateBoxedTypes>
+              <generateClientApi>true</generateClientApi>
+              <writeToFiles>true</writeToFiles>
 						</configuration>
-					</execution>
+					</execution> -->
 				</executions>
 			</plugin>
 			<plugin>
