@@ -1,12 +1,16 @@
 package com.metabitlab.taibiex.privateapi.fetcher;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import com.alibaba.fastjson.JSON;
+import com.metabitlab.taibiex.privateapi.configuration.SubgraphsClient;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsGraphQLQuery;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsProjectionRoot;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
+import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 
 /**
@@ -21,24 +25,29 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 @DgsComponent
 public class TokenDataFetcher {
 
-  @Value("${app.subgraphs.endpoint}")
-  private String subgraphsEndpoint;
+  @Autowired
+  SubgraphsClient subgraphsClient;
 
   @DgsQuery
   public Token token(@InputArgument String chain, @InputArgument String address) {
     System.out.println("chain: " + chain);
     System.out.println("address: " + address);
 
-    GraphQLQueryRequest request = new GraphQLQueryRequest(
-      new PoolsGraphQLQuery.Builder()
-        .skip(0)
-        .first(100)
-        .build()
-    );
+    PoolsGraphQLQuery pools = PoolsGraphQLQuery.newRequest()
+      .skip(0)
+      .first(100)
+      .queryName("TokenSpotPrice")
+      .build();
 
-    String requestBody = request.serialize();
-    System.out.println(subgraphsEndpoint);
-    System.out.println(requestBody);
+    PoolsProjectionRoot<?, ?> poolsProjection = new PoolsProjectionRoot<>()
+      .id();
+
+    GraphQLQueryRequest request = new GraphQLQueryRequest(pools, poolsProjection);
+
+    GraphQLResponse response = subgraphsClient.getRestClientGraphQlClient().executeQuery(request.serialize());
+
+    System.out.println(request.serialize());
+    System.out.println(JSON.toJSONString(response.extractValue("pools")));
 
     return new Token() {
       {
