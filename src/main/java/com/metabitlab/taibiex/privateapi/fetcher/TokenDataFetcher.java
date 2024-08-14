@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.alibaba.fastjson.JSON;
 import com.metabitlab.taibiex.privateapi.configuration.SubgraphsClient;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsGraphQLQuery;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsProjectionRoot;
@@ -51,7 +52,8 @@ public class TokenDataFetcher {
 
     return new Token() {
       {
-        setName("ETH");
+        setAddress(address);
+        setChain(Chain.valueOf(chain));
       }
     };
   }

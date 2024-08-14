@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
+import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.RestClientGraphQLClient;
 
 @Configuration
@@ -18,7 +19,7 @@ public class SubgraphsClient {
   private String subgraphsEndpoint;
 
   @Bean
-  public RestClientGraphQLClient getRestClientGraphQlClient() {
+  public GraphQLClient getRestClientGraphQlClient() {
     RestClient client = restClientBuilder.baseUrl(this.subgraphsEndpoint).build();
     return new RestClientGraphQLClient(client);
   }
