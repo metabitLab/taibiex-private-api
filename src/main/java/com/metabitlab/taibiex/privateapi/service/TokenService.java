@@ -12,6 +12,7 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenProjectMa
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableField;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
 import com.metabitlab.taibiex.privateapi.mapper.CGlibMapper;
+import com.metabitlab.taibiex.privateapi.subgraphfetcher.PoolsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsGraphQLQuery;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsProjectionRoot;
@@ -34,9 +35,13 @@ import java.util.Optional;
 public class TokenService {
 
   private final TokenSubgraphFetcher tokenSubgraphFetcher;
+  private final PoolsSubgraphFetcher poolsSubgraphFetcher;
 
-  public TokenService(TokenSubgraphFetcher tokenSubgraphFetcher) {
+  public TokenService(
+    TokenSubgraphFetcher tokenSubgraphFetcher,
+    PoolsSubgraphFetcher poolsSubgraphFetcher) {
     this.tokenSubgraphFetcher = tokenSubgraphFetcher;
+    this.poolsSubgraphFetcher = poolsSubgraphFetcher;
   }
 
   public List<Token> topTokens(Chain chain, Integer page, Integer pageSize, TokenSortableField orderBy) {
@@ -67,7 +72,7 @@ public class TokenService {
 
   public Token token(Chain chain, String address) {
 
-    List<Pool> pools = tokenSubgraphFetcher.pools(0, 100);
+    List<Pool> pools = poolsSubgraphFetcher.pools(0, 100);
     Optional<Pool> target = pools.stream()
       .filter(item -> "0x6cec4df7ad64d5d06860a397c17edebc5f311ae3".equals(item.getId()))
       .findFirst();
