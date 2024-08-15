@@ -13,24 +13,15 @@ import com.netflix.graphql.dgs.InputArgument;
 
 import java.util.List;
 
-/**
- * This class is responsible for fetching token data.
- * 
- * curl -X POST http://localhost:8803/api/graphql/query \
- * -H "Content-Type: application/json" \
- * -d '{"query": "query Wanda($chain: Chain!, $address: String) { token(chain: $chain, address: $address) { name } }", "operationName": "Wanda", "variables": { "chain": "ETHEREUM", "address": "321" }}'
- * 
- * @author Nix
- */
 @DgsComponent
 public class TokenDataFetcher {
 
-  @Autowired
-  SubgraphsClient subgraphsClient;
+  private final SubgraphsClient subgraphsClient;
 
   private final TokenService tokenService;
 
-    public TokenDataFetcher(TokenService tokenService) {
+    public TokenDataFetcher(SubgraphsClient subgraphsClient, TokenService tokenService) {
+        this.subgraphsClient = subgraphsClient;
         this.tokenService = tokenService;
     }
 
