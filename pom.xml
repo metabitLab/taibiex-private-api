@@ -110,7 +110,8 @@
                 <BigDecimal>java.math.BigDecimal</BigDecimal>
                 <BigInt>java.math.BigInteger</BigInt>
                 <Bytes>java.lang.String</Bytes>
-              </typeMapping>
+				  <AWSJSON>com.alibaba.fastjson.JSONObject</AWSJSON>
+			  </typeMapping>
 						</configuration>
 					</execution>
 				</executions>
