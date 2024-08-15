@@ -16,12 +16,9 @@ import java.util.List;
 @DgsComponent
 public class TokenDataFetcher {
 
-  private final SubgraphsClient subgraphsClient;
-
   private final TokenService tokenService;
 
-    public TokenDataFetcher(SubgraphsClient subgraphsClient, TokenService tokenService) {
-        this.subgraphsClient = subgraphsClient;
+    public TokenDataFetcher(TokenService tokenService) {
         this.tokenService = tokenService;
     }
 
