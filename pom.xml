@@ -87,6 +87,9 @@
               </schemaPaths>
               <packageName>com.metabitlab.taibiex.privateapi.graphqlapi.codegen</packageName>
               <addGeneratedAnnotation>true</addGeneratedAnnotation>
+              <typeMapping>
+                <AWSJSON>com.alibaba.fastjson.JSONObject</AWSJSON>
+              </typeMapping>
             </configuration>
           </execution>
 					<execution>
