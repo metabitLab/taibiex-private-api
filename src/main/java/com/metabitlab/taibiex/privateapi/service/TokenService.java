@@ -39,13 +39,10 @@ public class TokenService {
             Token token = CGlibMapper.mapper(subGraphToken, Token.class);
             token.setAddress(subGraphToken.getId());
             token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
+            token.setChain(Chain.TABI);
+            token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
             tokenList.add(token);
         }
-
-        tokenList.forEach(token -> {
-            token.setChain(Chain.TABI);
-            token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + token.getId()).getBytes()));
-        });
 
         return tokenList;
 
