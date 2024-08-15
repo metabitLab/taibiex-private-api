@@ -9,6 +9,11 @@ import org.springframework.web.client.RestClient;
 import com.netflix.graphql.dgs.client.GraphQLClient;
 import com.netflix.graphql.dgs.client.RestClientGraphQLClient;
 
+/**
+ * This class is responsible for building the subgraphs client.
+ * 
+ * @author Nix
+ */
 @Configuration
 public class SubgraphsClient {
 
