@@ -14,13 +14,9 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
 import com.metabitlab.taibiex.privateapi.mapper.CGlibMapper;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.PoolsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
-import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsGraphQLQuery;
-import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsProjectionRoot;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Pool;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 
 import org.springframework.stereotype.Service;
 
