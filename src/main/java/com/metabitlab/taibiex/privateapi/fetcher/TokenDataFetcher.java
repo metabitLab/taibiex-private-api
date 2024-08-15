@@ -1,5 +1,6 @@
 package com.metabitlab.taibiex.privateapi.fetcher;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +12,10 @@ import com.metabitlab.taibiex.privateapi.configuration.SubgraphsClient;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedAmount;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedOhlc;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenMarket;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenProject;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenProjectMarket;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsGraphQLQuery;
@@ -41,7 +45,10 @@ public class TokenDataFetcher {
   SubgraphsClient subgraphsClient;
 
   @DgsQuery
-  public Token token(@InputArgument String chain, @InputArgument String address) {
+  public Token token(
+    @InputArgument String chain, 
+    @InputArgument String address
+  ) {
     PoolsGraphQLQuery poolsQuery = PoolsGraphQLQuery.newRequest()
       .skip(0)
       .first(100)
@@ -63,25 +70,83 @@ public class TokenDataFetcher {
 
     return new Token() {
       {
-        setId("123");
+        setId("uuid");
         setChain(Chain.valueOf(chain));
         setAddress(address);
         setName("Ethereum");
         setSymbol("ETH");
         setProject(new TokenProject() {
           {
-            setId("123");
+            setId("uuid");
             setMarkets(Arrays.asList(
               new TokenProjectMarket() {
                 {
-                  setId("123");
+                  setId("uuid");
                   setPrice(new Amount() {
                     {
-                      setId("123");
+                      setId("uuid");
                       setCurrency(Currency.USD);
                       setValue(price);
                     }
                   });
+                }
+              }
+            ));
+          }
+        });
+        setMarket(new TokenMarket() {
+          {
+            setId("uuid");
+            setPrice(new Amount() {
+              {
+                setId("uuid");
+                setCurrency(Currency.USD);
+                setValue(price);
+              }
+            });
+            setOhlc(Arrays.asList(
+              new TimestampedOhlc() {
+                {
+                  setId("uuid");
+                  setTimestamp((int) Instant.now().getEpochSecond());
+                  setOpen(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(price);
+                    }
+                  });
+                  setHigh(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(price);
+                    }
+                  });
+                  setLow(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(price);
+                    }
+                  });
+                  setClose(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(price);
+                    }
+                  });
+                }
+              }
+            ));
+            setPriceHistory(Arrays.asList(
+              new TimestampedAmount() {
+                {
+                  setId("uuid");
+                  setCurrency(Currency.USD);
+                  setValue(price);
+                  setTimestamp((int) Instant.now().getEpochSecond());
                 }
               }
             ));
