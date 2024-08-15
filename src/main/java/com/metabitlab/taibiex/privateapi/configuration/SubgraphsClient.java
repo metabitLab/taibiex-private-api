@@ -19,7 +19,7 @@ public class SubgraphsClient {
   private String subgraphsEndpoint;
 
   @Bean
-  public GraphQLClient getRestClientGraphQlClient() {
+  public GraphQLClient build() {
     RestClient client = restClientBuilder.baseUrl(this.subgraphsEndpoint).build();
     return new RestClientGraphQLClient(client);
   }

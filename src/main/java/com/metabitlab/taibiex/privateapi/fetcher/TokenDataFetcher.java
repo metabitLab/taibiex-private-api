@@ -45,7 +45,7 @@ public class TokenDataFetcher {
 
     GraphQLQueryRequest request = new GraphQLQueryRequest(pools, poolsProjection);
 
-    GraphQLResponse response = subgraphsClient.getRestClientGraphQlClient().executeQuery(request.serialize());
+    GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
 
     System.out.println(request.serialize());
     System.out.println(JSON.toJSONString(response.extractValue("pools")));
