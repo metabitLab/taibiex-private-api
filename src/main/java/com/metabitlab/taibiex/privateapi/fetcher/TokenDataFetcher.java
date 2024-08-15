@@ -1,18 +1,17 @@
 package com.metabitlab.taibiex.privateapi.fetcher;
 
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableField;
+import com.metabitlab.taibiex.privateapi.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.alibaba.fastjson.JSON;
 import com.metabitlab.taibiex.privateapi.configuration.SubgraphsClient;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
-import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsGraphQLQuery;
-import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolsProjectionRoot;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
-import com.netflix.graphql.dgs.client.GraphQLResponse;
-import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+
+import java.util.List;
 
 /**
  * This class is responsible for fetching token data.
@@ -29,32 +28,17 @@ public class TokenDataFetcher {
   @Autowired
   SubgraphsClient subgraphsClient;
 
-  @DgsQuery
-  public Token token(@InputArgument String chain, @InputArgument String address) {
-    System.out.println("chain: " + chain);
-    System.out.println("address: " + address);
+  private final TokenService tokenService;
 
-    PoolsGraphQLQuery pools = PoolsGraphQLQuery.newRequest()
-      .skip(0)
-      .first(100)
-      .queryName("TokenSpotPrice")
-      .build();
+    public TokenDataFetcher(TokenService tokenService) {
+        this.tokenService = tokenService;
+    }
 
-    PoolsProjectionRoot<?, ?> poolsProjection = new PoolsProjectionRoot<>()
-      .id();
-
-    GraphQLQueryRequest request = new GraphQLQueryRequest(pools, poolsProjection);
-
-    GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
-
-    System.out.println(request.serialize());
-    System.out.println(JSON.toJSONString(response.extractValue("pools")));
-
-    return new Token() {
-      {
-        setAddress(address);
-        setChain(Chain.valueOf(chain));
-      }
-    };
+    @DgsQuery
+  public List<Token> topTokens(@InputArgument Chain chain,
+                               @InputArgument Integer page,
+                               @InputArgument Integer pageSize,
+                               @InputArgument TokenSortableField orderBy) {
+      return tokenService.topTokens(chain, page, pageSize, orderBy);
   }
 }

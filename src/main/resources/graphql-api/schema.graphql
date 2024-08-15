@@ -182,6 +182,7 @@ enum Chain {
     BNB
     BASE
     BLAST
+    TABI
     UNKNOWN_CHAIN
 }
 
@@ -216,6 +217,7 @@ enum Currency {
     UAH
     USD
     VND
+    TABI
 }
 
 input CurrencyAmountInput {
