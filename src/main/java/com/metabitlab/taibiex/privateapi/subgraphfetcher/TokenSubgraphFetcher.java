@@ -3,6 +3,8 @@ package com.metabitlab.taibiex.privateapi.subgraphfetcher;
 import com.jayway.jsonpath.TypeRef;
 import com.metabitlab.taibiex.privateapi.configuration.SubgraphsClient;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.*;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.TokenGraphQLQuery;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.TokenProjectionRoot;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.TokensGraphQLQuery;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.TokensProjectionRoot;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
@@ -39,5 +41,26 @@ public class TokenSubgraphFetcher {
 
         GraphQLResponse graphqlResponse = subgraphsClient.build().executeQuery(request.serialize());
         return graphqlResponse.extractValueAsObject("tokens",  new TypeRef<List<Token>>() {});
+    }
+
+    public Token token(String id){
+      if (id == null || id.isEmpty()) {
+        return null;
+      }
+
+      TokenGraphQLQuery tokenQuery = TokenGraphQLQuery.newRequest()
+        .id(id.toLowerCase())
+        .queryName("TokenSubgraphFetcher_token")
+        .build();
+
+      TokenProjectionRoot<?, ?> projection = new TokenProjectionRoot<>()
+        .id().decimals().name().symbol().totalSupply().derivedETH()
+        .totalValueLocked().totalValueLockedUSD().totalValueLockedUSDUntracked()
+        .txCount().untrackedVolumeUSD().volume().volumeUSD().poolCount();
+
+      GraphQLQueryRequest request = new GraphQLQueryRequest(tokenQuery, projection);
+      GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
+
+      return response.extractValueAsObject("token", new TypeRef<Token>() {});
     }
 }
