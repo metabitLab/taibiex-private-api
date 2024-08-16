@@ -1,6 +1,5 @@
 package com.metabitlab.taibiex.privateapi.subgraphfetcher;
 
-import com.alibaba.fastjson.JSON;
 import com.jayway.jsonpath.TypeRef;
 import com.metabitlab.taibiex.privateapi.configuration.SubgraphsClient;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.*;
@@ -31,15 +30,14 @@ public class TokenSubgraphFetcher {
                 .queryName("tokens")
                 .build();
 
-        TokensProjectionRoot projection = new TokensProjectionRoot()
+        TokensProjectionRoot<?, ?> projection = new TokensProjectionRoot<>()
                 .id().decimals().name().symbol().totalSupply().derivedETH()
                 .totalValueLocked().totalValueLockedUSD().totalValueLockedUSDUntracked()
                 .txCount().untrackedVolumeUSD().volume().volumeUSD().poolCount();
 
         GraphQLQueryRequest request = new GraphQLQueryRequest(query, projection);
 
-        GraphQLResponse graphQLResponse = subgraphsClient.build().executeQuery(request.serialize());
-        String tokens = JSON.toJSONString(graphQLResponse.extractValue("tokens"));
-        return graphQLResponse.extractValueAsObject("tokens",  new TypeRef<List<Token>>() {});
+        GraphQLResponse graphqlResponse = subgraphsClient.build().executeQuery(request.serialize());
+        return graphqlResponse.extractValueAsObject("tokens",  new TypeRef<List<Token>>() {});
     }
 }
