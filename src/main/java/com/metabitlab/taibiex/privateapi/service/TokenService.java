@@ -1,10 +1,9 @@
 package com.metabitlab.taibiex.privateapi.service;
 
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableField;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
+import com.metabitlab.taibiex.privateapi.entity.TokenProjectEntity;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.mapper.CGlibMapper;
+import com.metabitlab.taibiex.privateapi.repository.TokenProjectRepository;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
@@ -17,9 +16,12 @@ import java.util.List;
 @Service
 public class TokenService {
 
+    private final TokenProjectRepository tokenProjectRepository;
+
     private final TokenSubgraphFetcher tokenSubgraphFetcher;
 
-    public TokenService(TokenSubgraphFetcher tokenSubgraphFetcher) {
+    public TokenService(TokenProjectRepository tokenProjectRepository, TokenSubgraphFetcher tokenSubgraphFetcher) {
+        this.tokenProjectRepository = tokenProjectRepository;
         this.tokenSubgraphFetcher = tokenSubgraphFetcher;
     }
 
@@ -41,6 +43,16 @@ public class TokenService {
             token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
             token.setChain(Chain.TABI);
             token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
+
+            TokenProjectEntity projectEntity = tokenProjectRepository.findByAddress(subGraphToken.getId());
+            if (projectEntity != null){
+                TokenProject tokenProject = CGlibMapper.mapper(projectEntity, TokenProject.class);
+                tokenProject.setId(Base64.getEncoder().encodeToString(("TokenProject:TABI_" + subGraphToken.getId() + "_" + subGraphToken.getSymbol()).getBytes()));
+                Image logo = Image.newBuilder().url(projectEntity.getLogoUrl()).dimensions(Dimensions.newBuilder().width(projectEntity.getLogoWidth()).height(projectEntity.getLogoHeight()).build()).build();
+                logo.setId(Base64.getEncoder().encodeToString(("Image:" + logo.getUrl()).getBytes()));
+                tokenProject.setLogo(logo);
+                token.setProject(tokenProject);
+            }
             tokenList.add(token);
         }
 

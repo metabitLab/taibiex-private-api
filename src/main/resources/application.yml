@@ -1,5 +1,6 @@
-server:
-  port: 8803
+spring:
+  profiles:
+    active: dev
 
 dgs:
   graphql:
