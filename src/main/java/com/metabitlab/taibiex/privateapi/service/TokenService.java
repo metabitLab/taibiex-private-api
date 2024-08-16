@@ -1,38 +1,35 @@
 package com.metabitlab.taibiex.privateapi.service;
 
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableField;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
+import com.metabitlab.taibiex.privateapi.entity.TokenProjectEntity;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
 import com.metabitlab.taibiex.privateapi.mapper.CGlibMapper;
+import com.metabitlab.taibiex.privateapi.repository.TokenProjectRepository;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.subgraphfetcher.PoolsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Pool;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.time.Instant;
+import java.util.*;
 
 @Service
 public class TokenService {
 
   private final TokenSubgraphFetcher tokenSubgraphFetcher;
   private final PoolsSubgraphFetcher poolsSubgraphFetcher;
-    private final TokenProjectRepository tokenProjectRepository;
+  private final TokenProjectRepository tokenProjectRepository;
 
-    private final TokenSubgraphFetcher tokenSubgraphFetcher;
-
-  public TokenService(
-    TokenSubgraphFetcher tokenSubgraphFetcher,
-    PoolsSubgraphFetcher poolsSubgraphFetcher) {
-    this.tokenSubgraphFetcher = tokenSubgraphFetcher;
-    this.poolsSubgraphFetcher = poolsSubgraphFetcher;
-  }
-    public TokenService(TokenProjectRepository tokenProjectRepository, TokenSubgraphFetcher tokenSubgraphFetcher) {
-        this.tokenProjectRepository = tokenProjectRepository;
+    public TokenService(TokenSubgraphFetcher tokenSubgraphFetcher,
+                        PoolsSubgraphFetcher poolsSubgraphFetcher,
+                        TokenProjectRepository tokenProjectRepository) {
         this.tokenSubgraphFetcher = tokenSubgraphFetcher;
+        this.poolsSubgraphFetcher = poolsSubgraphFetcher;
+        this.tokenProjectRepository = tokenProjectRepository;
     }
+
 
     public List<Token> topTokens(Chain chain, Integer page, Integer pageSize, TokenSortableField orderBy) {
 
