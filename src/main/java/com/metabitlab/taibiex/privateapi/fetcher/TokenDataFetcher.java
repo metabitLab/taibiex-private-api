@@ -193,41 +193,41 @@ public class TokenDataFetcher {
     }
 
     return tokenDayDataList.stream()
-                .map(item -> {
-                  TimestampedOhlc ohlc = new TimestampedOhlc();
-                  ohlc.setId(item.getId());
-                  ohlc.setTimestamp(item.getDate());
-                  ohlc.setClose(new Amount() {
-                    {
-                      setId("uuid");
-                      setCurrency(Currency.USD);
-                      setValue(item.getClose().doubleValue());
-                    }
-                  });
-                  ohlc.setHigh(new Amount() {
-                    {
-                      setId("uuid");
-                      setCurrency(Currency.USD);
-                      setValue(item.getHigh().doubleValue());
-                    }
-                  });
-                  ohlc.setLow(new Amount() {
-                    {
-                      setId("uuid");
-                      setCurrency(Currency.USD);
-                      setValue(item.getLow().doubleValue());
-                    }
-                  });
-                  ohlc.setOpen(new Amount() {
-                    {
-                      setId("uuid");
-                      setCurrency(Currency.USD);
-                      setValue(item.getOpen().doubleValue());
-                    }
-                  });
-                  return ohlc;
-                })
-                .toList();
+                           .map(item -> {
+                              TimestampedOhlc ohlc = new TimestampedOhlc();
+                              ohlc.setId(item.getId());
+                              ohlc.setTimestamp(item.getDate());
+                              ohlc.setClose(new Amount() {
+                                {
+                                  setId("uuid");
+                                  setCurrency(Currency.USD);
+                                  setValue(item.getClose().doubleValue());
+                                }
+                              });
+                              ohlc.setHigh(new Amount() {
+                                {
+                                  setId("uuid");
+                                  setCurrency(Currency.USD);
+                                  setValue(item.getHigh().doubleValue());
+                                }
+                              });
+                              ohlc.setLow(new Amount() {
+                                {
+                                  setId("uuid");
+                                  setCurrency(Currency.USD);
+                                  setValue(item.getLow().doubleValue());
+                                }
+                              });
+                              ohlc.setOpen(new Amount() {
+                                {
+                                  setId("uuid");
+                                  setCurrency(Currency.USD);
+                                  setValue(item.getOpen().doubleValue());
+                                }
+                              });
+                              return ohlc;
+                            })
+                           .toList();
   }
 
   @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.PriceHistory)
