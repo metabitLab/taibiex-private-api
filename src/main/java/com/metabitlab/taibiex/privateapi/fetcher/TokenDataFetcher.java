@@ -2,6 +2,7 @@ package com.metabitlab.taibiex.privateapi.fetcher;
 
 import java.util.List;
 
+import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;
@@ -31,8 +32,11 @@ import graphql.execution.DataFetcherResult;
 public class TokenDataFetcher {
 
   private final TokenService tokenService;
-  public TokenDataFetcher(TokenService tokenService) {
+  private final TokenProjectService tokenProjectService;
+  public TokenDataFetcher(TokenService tokenService,
+                          TokenProjectService tokenProjectService) {
     this.tokenService = tokenService;
+      this.tokenProjectService = tokenProjectService;
   }
 
   @Autowired
@@ -96,18 +100,13 @@ public class TokenDataFetcher {
 
   @DgsData(parentType = "Token", field = "project")
   public TokenProject project(DgsDataFetchingEnvironment env) {
-    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
-      = env.getLocalContext();
+    com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t
+      = env.getSource();
 
-    return new TokenProject() {
-      {
-        setId("uuid");
-        // TODO: 仍有剩余字段未填值
-      }
-    };
+    return tokenProjectService.findByAddress(t);
   }
 
-  @DgsData(parentType = "TokenProject", field = "markets")
+  @DgsData(parentType = "TokenProject")
   public List<TokenProjectMarket> markets(@InputArgument List<Currency> currencies, 
                                           DgsDataFetchingEnvironment env) {
     Token t = env.getLocalContext();
@@ -136,11 +135,12 @@ public class TokenDataFetcher {
                   .toList();
   }
 
-  @DgsQuery
+  @DgsData(parentType = "Query", field = "topTokens")
   public List<Token> topTokens(@InputArgument Chain chain,
                                @InputArgument Integer page,
                                @InputArgument Integer pageSize,
                                @InputArgument TokenSortableField orderBy) {
-      return tokenService.topTokens(chain, page, pageSize, orderBy);
+    return tokenService.topTokens(chain, page, pageSize, orderBy);
   }
+
 }

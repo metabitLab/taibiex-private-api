@@ -43,7 +43,7 @@ public class TokenService {
             token.setChain(Chain.TABI);
             token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
 
-            TokenProjectEntity projectEntity = tokenProjectRepository.findByAddress(subGraphToken.getId());
+            /*TokenProjectEntity projectEntity = tokenProjectRepository.findByAddress(subGraphToken.getId());
             if (projectEntity != null){
                 TokenProject tokenProject = CGlibMapper.mapper(projectEntity, TokenProject.class);
                 tokenProject.setId(Base64.getEncoder().encodeToString(("TokenProject:TABI_" + subGraphToken.getId() + "_" + subGraphToken.getSymbol()).getBytes()));
@@ -51,7 +51,7 @@ public class TokenService {
                 logo.setId(Base64.getEncoder().encodeToString(("Image:" + logo.getUrl()).getBytes()));
                 tokenProject.setLogo(logo);
                 token.setProject(tokenProject);
-            }
+            }*/
             tokenList.add(token);
         }
 

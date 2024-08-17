@@ -1097,7 +1097,7 @@ type TokenProject {
     descriptionTranslations: DescriptionTranslations
     twitterName: String
     homepageUrl: String
-    logoUrl: String @deprecated(reason: "use logo")
+    logoUrl: String
     logo: Image
     smallLogo: Image @deprecated(reason: "use logo")
     isSpam: Boolean
