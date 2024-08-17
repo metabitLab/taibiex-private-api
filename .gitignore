@@ -34,3 +34,7 @@ build/
 logs
 /.idea/
 /.idea/
+
+### MySQL ###
+mysql-data/
+mysql.conf.d/
