@@ -38,10 +38,11 @@ public class TokenDataFetcher {
 
   private final TokenService tokenService;
   private final TokenProjectService tokenProjectService;
+
   public TokenDataFetcher(TokenService tokenService,
                           TokenProjectService tokenProjectService) {
     this.tokenService = tokenService;
-      this.tokenProjectService = tokenProjectService;
+    this.tokenProjectService = tokenProjectService;
   }
 
   @Autowired
@@ -52,7 +53,7 @@ public class TokenDataFetcher {
 
   @DgsQuery
   public DataFetcherResult<Token> token(@InputArgument Chain chain, 
-                     @InputArgument String address) {
+                                        @InputArgument String address) {
 
     com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token 
       = tokenSubgraphFetcher.token(address);
@@ -70,9 +71,9 @@ public class TokenDataFetcher {
     };
     
     return DataFetcherResult.<Token>newResult()
-                      .data(t)
-                      .localContext(token)
-                      .build();
+                            .data(t)
+                            .localContext(token)
+                            .build();
   }
 
   @DgsData(parentType = "Token", field = "market")
