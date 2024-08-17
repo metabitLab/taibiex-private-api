@@ -11,9 +11,12 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableF
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
 import com.metabitlab.taibiex.privateapi.service.TokenService;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenMarketSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.TokenDayData;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
@@ -51,6 +54,9 @@ public class TokenDataFetcher {
   @Autowired
   TokenSubgraphFetcher tokenSubgraphFetcher;
 
+  @Autowired
+  TokenMarketSubgraphFetcher tokenMarketSubgraphFetcher;
+
   @DgsQuery
   public DataFetcherResult<Token> token(@InputArgument Chain chain, 
                                         @InputArgument String address) {
@@ -76,7 +82,7 @@ public class TokenDataFetcher {
                             .build();
   }
 
-  @DgsData(parentType = "Token", field = "market")
+  @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Market)
   public TokenMarket market(@InputArgument Currency currency, DgsDataFetchingEnvironment env) {
     if (currency != Currency.USD) {
       throw new UnSupportCurrencyException("This currency is not supported", currency);
@@ -84,6 +90,8 @@ public class TokenDataFetcher {
 
     com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
       = env.getLocalContext();
+    com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token token 
+      = env.getSource();
 
     Bundle bundle = bundleSubgraphFetcher.bundle();
     double price = bundle.getEthPriceUSD().multiply(t.getDerivedETH()).doubleValue();
@@ -91,6 +99,7 @@ public class TokenDataFetcher {
     return new TokenMarket() {
       {
         setId("uuid");
+        setToken(token);
         setPrice(new Amount() {
           {
             setId("uuid");
@@ -100,12 +109,40 @@ public class TokenDataFetcher {
         });
         // 仅支持 Subgraph V3
         setPriceSource(PriceSource.SUBGRAPH_V3);
-        // TODO: 仍有剩余字段未填值
+        setTotalValueLocked(new Amount() {
+          {
+            setId("uuid");
+            setCurrency(Currency.USD);
+            setValue(t.getTotalValueLocked().doubleValue());
+          }
+        });
+        setFullyDilutedValuation(new Amount() {
+          {
+            // TODO: 需要填值
+          }
+        });
+        setVolume(new Amount() {
+          {
+            setId("uuid");
+            setCurrency(Currency.USD);
+            setValue(t.getVolume().doubleValue());
+          }
+        });
+        setPricePercentChange(new Amount() {
+          {
+            // TODO: 需要填值
+          }
+        });
+        setPriceHighLow(new Amount() {
+          {
+            // TODO: 需要填值
+          }
+        });
       }
     };
   }
 
-  @DgsData(parentType = "Token", field = "project")
+  @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Project)
   public TokenProject project(DgsDataFetchingEnvironment env) {
     com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t
       = env.getSource();
@@ -113,12 +150,9 @@ public class TokenDataFetcher {
     return tokenProjectService.findByAddress(t);
   }
 
-  @DgsData(parentType = "TokenProject", field = "markets")
+  @DgsData(parentType = DgsConstants.TOKENPROJECT.TYPE_NAME, field = DgsConstants.TOKENPROJECT.Markets)
   public List<TokenProjectMarket> markets(@InputArgument List<Currency> currencies, 
                                           DgsDataFetchingEnvironment env) {
-    TokenProject project = env.getSource();
-
-    System.out.println(project);
     System.out.println(currencies);
 
     // TODO: 未获取真实数据
@@ -142,14 +176,61 @@ public class TokenDataFetcher {
                   .toList();
   }
 
-  @DgsData(parentType = "TokenMarket", field = "ohlc")
-  public List<TimestampedOhlc> ohlc(@InputArgument HistoryDuration duration) {
-    System.out.println(duration);
+  @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.Ohlc)
+  public List<TimestampedOhlc> ohlc(@InputArgument HistoryDuration duration,
+                                    DgsDataFetchingEnvironment env) throws Exception {
+    if (duration != HistoryDuration.DAY) {
+      throw new Exception("This duration is not supported");
+    }
 
-    return Arrays.asList();
+    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
+      = env.getLocalContext();
+
+
+    List<TokenDayData> datas = tokenMarketSubgraphFetcher.tokenDayDatasById(t.getId());
+    if (datas == null) {
+      return null;
+    }
+
+    return datas.stream()
+                .map(item -> {
+                  TimestampedOhlc ohlc = new TimestampedOhlc();
+                  ohlc.setId(item.getId());
+                  ohlc.setTimestamp(item.getDate());
+                  ohlc.setClose(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(item.getClose().doubleValue());
+                    }
+                  });
+                  ohlc.setHigh(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(item.getHigh().doubleValue());
+                    }
+                  });
+                  ohlc.setLow(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(item.getLow().doubleValue());
+                    }
+                  });
+                  ohlc.setOpen(new Amount() {
+                    {
+                      setId("uuid");
+                      setCurrency(Currency.USD);
+                      setValue(item.getOpen().doubleValue());
+                    }
+                  });
+                  return ohlc;
+                })
+                .toList();
   }
 
-  @DgsData(parentType = "TokenMarket", field = "priceHistory")
+  @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.PriceHistory)
   public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration) {
     System.out.println(duration);
 
