@@ -8,14 +8,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Arrays;
 
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableField;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
 import com.metabitlab.taibiex.privateapi.service.TokenService;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
+import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.HistoryDuration;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PriceSource;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedAmount;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedOhlc;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenMarket;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenProject;
@@ -57,6 +62,7 @@ public class TokenDataFetcher {
         setId(token.getId());
         setChain(chain);
         setAddress(address);
+        setStandard(TokenStandard.ERC20);
         setName(token.getName());
         setSymbol(token.getSymbol());
         // TODO: 仍有剩余字段未填值
@@ -72,7 +78,7 @@ public class TokenDataFetcher {
   @DgsData(parentType = "Token", field = "market")
   public TokenMarket market(@InputArgument Currency currency, DgsDataFetchingEnvironment env) {
     if (currency != Currency.USD) {
-      return null;
+      throw new UnSupportCurrencyException("This currency is not supported", currency);
     }
 
     com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
@@ -106,12 +112,12 @@ public class TokenDataFetcher {
     return tokenProjectService.findByAddress(t);
   }
 
-  @DgsData(parentType = "TokenProject")
+  @DgsData(parentType = "TokenProject", field = "markets")
   public List<TokenProjectMarket> markets(@InputArgument List<Currency> currencies, 
                                           DgsDataFetchingEnvironment env) {
-    Token t = env.getLocalContext();
+    TokenProject project = env.getSource();
 
-    System.out.println(t);
+    System.out.println(project);
     System.out.println(currencies);
 
     // TODO: 未获取真实数据
@@ -133,6 +139,20 @@ public class TokenDataFetcher {
     return markets.stream()
                   .filter(market -> currencies.contains(market.getCurrency()))
                   .toList();
+  }
+
+  @DgsData(parentType = "TokenMarket", field = "ohlc")
+  public List<TimestampedOhlc> ohlc(@InputArgument HistoryDuration duration) {
+    System.out.println(duration);
+
+    return Arrays.asList();
+  }
+
+  @DgsData(parentType = "TokenMarket", field = "priceHistory")
+  public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration) {
+    System.out.println(duration);
+
+    return Arrays.asList();
   }
 
   @DgsData(parentType = "Query", field = "topTokens")
