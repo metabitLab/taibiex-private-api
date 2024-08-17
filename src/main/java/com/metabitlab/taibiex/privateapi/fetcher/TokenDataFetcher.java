@@ -187,12 +187,12 @@ public class TokenDataFetcher {
       = env.getLocalContext();
 
 
-    List<TokenDayData> datas = tokenMarketSubgraphFetcher.tokenDayDatasById(t.getId());
-    if (datas == null) {
+    List<TokenDayData> tokenDayDataList = tokenMarketSubgraphFetcher.tokenDayDatasById(t.getId());
+    if (tokenDayDataList == null) {
       return null;
     }
 
-    return datas.stream()
+    return tokenDayDataList.stream()
                 .map(item -> {
                   TimestampedOhlc ohlc = new TimestampedOhlc();
                   ohlc.setId(item.getId());
