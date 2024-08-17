@@ -16,6 +16,7 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.TokenDayData;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
+import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
@@ -178,16 +179,16 @@ public class TokenDataFetcher {
 
   @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.Ohlc)
   public List<TimestampedOhlc> ohlc(@InputArgument HistoryDuration duration,
-                                    DgsDataFetchingEnvironment env) throws Exception {
+                                    DgsDataFetchingEnvironment env) {
     if (duration != HistoryDuration.DAY) {
-      throw new Exception("This duration is not supported");
+      throw new UnSupportDurationException("This duration is not supported", duration);
     }
 
     com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
       = env.getLocalContext();
 
 
-    List<TokenDayData> tokenDayDataList = tokenMarketSubgraphFetcher.tokenDayDatasById(t.getId());
+    List<TokenDayData> tokenDayDataList = tokenMarketSubgraphFetcher.tokenOhlcById(t.getId());
     if (tokenDayDataList == null) {
       return null;
     }
@@ -232,6 +233,10 @@ public class TokenDataFetcher {
 
   @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.PriceHistory)
   public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration) {
+    if (duration != HistoryDuration.DAY) {
+      throw new UnSupportDurationException("This duration is not supported", duration);
+    }
+
     System.out.println(duration);
 
     return Arrays.asList();

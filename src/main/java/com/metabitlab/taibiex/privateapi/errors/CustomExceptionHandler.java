@@ -14,17 +14,35 @@ import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 
 @Component
-public class UnSupportCurrencyExceptionHandler implements DataFetcherExceptionHandler {
+public class CustomExceptionHandler implements DataFetcherExceptionHandler {
 
   private final DefaultDataFetcherExceptionHandler defaultHandler = new DefaultDataFetcherExceptionHandler();
 
   @Override
   public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(
       DataFetcherExceptionHandlerParameters handlerParameters) {
+
     Throwable exception = handlerParameters.getException();
+
+    Map<String, Object> debugInfo = new HashMap<>(4);
+
     if (exception instanceof UnSupportCurrencyException) {
-      Map<String, Object> debugInfo = new HashMap<>(4);
       debugInfo.put("Currency", ((UnSupportCurrencyException)exception).getCurrency());
+
+      TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
+              .message(exception.getMessage())
+              .debugInfo(debugInfo)
+              .path(handlerParameters.getPath()).build();
+
+      DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
+              .error(graphqlError)
+              .build();
+
+      return CompletableFuture.completedFuture(result);
+    }
+
+    if (exception instanceof UnSupportDurationException) {
+      debugInfo.put("Duration", ((UnSupportDurationException)exception).getDuration());
 
       TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
               .message(exception.getMessage())

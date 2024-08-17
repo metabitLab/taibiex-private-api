@@ -23,7 +23,7 @@ public class TokenMarketSubgraphFetcher {
   @Autowired
   SubgraphsClient subgraphsClient;
 
-  public List<TokenDayData> tokenDayDatasById(String tokenId) {
+  public List<TokenDayData> tokenOhlcById(String tokenId) {
     TokenDayDatasGraphQLQuery tokenDayDatasQuery = TokenDayDatasGraphQLQuery.newRequest()
       .first(1)
       .orderBy(TokenDayData_orderBy.date)
