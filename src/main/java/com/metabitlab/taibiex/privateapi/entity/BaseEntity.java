@@ -50,13 +50,17 @@ public abstract class BaseEntity {
 
     @PrePersist
     protected void prePersist() {
-        if (this.createTime == null) createTime = new Timestamp(new Date().getTime());
-        if (this.lastUpdateTime == null) lastUpdateTime = new Timestamp(new Date().getTime());
+        if (this.createTime == null) {
+          createTime = new Timestamp(System.currentTimeMillis());
+        }
+        if (this.lastUpdateTime == null) {
+          lastUpdateTime = new Timestamp(System.currentTimeMillis());
+        }
     }
 
     @PreUpdate
     protected void preUpdate() {
-        this.lastUpdateTime = new Timestamp(new Date().getTime());
+        this.lastUpdateTime = new Timestamp(System.currentTimeMillis());
     }
 
 }
