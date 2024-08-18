@@ -36,9 +36,18 @@ public class TokenMarketSubgraphFetcher {
   @Autowired
   SubgraphsClient subgraphsClient;
 
-  public List<TokenMinuteData> ohlcByTokenId(String tokenId) {
+  /**
+   * Ohlc
+   * Day: 每 1 分钟一个点，共 1440 个点
+   * 
+   * @param tokenId
+   * @return
+   */
+  public List<TokenMinuteData> dayOhlcByTokenId(String tokenId) {
     TokenMinuteDatasGraphQLQuery tokenMinuteDatasQuery = TokenMinuteDatasGraphQLQuery.newRequest()
-      .first(1)
+      // the subgraphs only allow client to query 1000 records at most
+      // but actually we need 1440 records
+      .first(1000)
       .orderBy(TokenMinuteData_orderBy.periodStartUnix)
       .orderDirection(OrderDirection.desc)
       .where(new TokenMinuteData_filter() {
@@ -70,6 +79,167 @@ public class TokenMarketSubgraphFetcher {
   }
 
   /**
+   * Ohlc
+   * Hour: 每 1 分钟一个点，共 60 个点
+   * 
+   * @param tokenId
+   * @return
+   */
+  public List<TokenMinuteData> hourOhlcByTokenId(String tokenId) {
+    TokenMinuteDatasGraphQLQuery tokenMinuteDatasQuery = TokenMinuteDatasGraphQLQuery.newRequest()
+      .first(60)
+      .orderBy(TokenMinuteData_orderBy.periodStartUnix)
+      .orderDirection(OrderDirection.desc)
+      .where(new TokenMinuteData_filter() {
+        {
+          setToken_(new Token_filter() {
+            {
+              setId(tokenId);
+            }
+          });
+        }
+      })
+      .queryName("TokenMarketSubgraphFetcher_hourOhlcByTokenId")
+      .build();
+
+    TokenMinuteDatasProjectionRoot<?, ?> tokenMinuteDatasProjection = new TokenMinuteDatasProjectionRoot<>()
+      .id()
+      .periodStartUnix()
+      .high()
+      .open()
+      .close()
+      .low();
+
+    GraphQLQueryRequest request = new GraphQLQueryRequest(tokenMinuteDatasQuery, tokenMinuteDatasProjection);
+    GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
+
+    List<TokenMinuteData> origin = response.extractValueAsObject("tokenMinuteDatas", new TypeRef<List<TokenMinuteData>>() {});
+
+    return origin;
+  }
+
+  /**
+   * Ohlc
+   * Week: 每 1 小时一个点，共 168 个点
+   * 
+   * @param tokenId
+   * @return
+   */
+  public List<TokenHourData> weekOhlcByTokenId(String tokenId) {
+    TokenHourDatasGraphQLQuery tokenHourDataQuery = TokenHourDatasGraphQLQuery.newRequest()
+      .first(168)
+      .orderBy(TokenHourData_orderBy.periodStartUnix)
+      .orderDirection(OrderDirection.desc)
+      .where(new TokenHourData_filter() {
+        {
+          setToken_(new Token_filter() {
+            {
+              setId(tokenId);
+            }
+          });
+        }
+      })
+      .queryName("TokenMarketSubgraphFetcher_weekOhlcByTokenId")
+      .build();
+
+    TokenHourDatasProjectionRoot<?, ?> tokenHourDataProjection = new TokenHourDatasProjectionRoot<>()
+      .id()
+      .periodStartUnix()
+      .high()
+      .open()
+      .close()
+      .low();
+
+    GraphQLQueryRequest request = new GraphQLQueryRequest(tokenHourDataQuery, tokenHourDataProjection);
+    GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
+
+    List<TokenHourData> origin = response.extractValueAsObject("tokenHourDatas", new TypeRef<List<TokenHourData>>() {});
+
+    return origin;
+  }
+  
+  /**
+   * Ohlc
+   * Month: 每 4 小时一个点，共 180 个点
+   * 
+   * @param tokenId
+   * @return
+   */
+  public List<TokenHourData> monthOhlcByTokenId(String tokenId) {
+    TokenHourDatasGraphQLQuery tokenHourDataQuery = TokenHourDatasGraphQLQuery.newRequest()
+      .first(180 * 4)
+      .orderBy(TokenHourData_orderBy.periodStartUnix)
+      .orderDirection(OrderDirection.desc)
+      .where(new TokenHourData_filter() {
+        {
+          setToken_(new Token_filter() {
+            {
+              setId(tokenId);
+            }
+          });
+        }
+      })
+      .queryName("TokenMarketSubgraphFetcher_monthOhlcByTokenId")
+      .build();
+
+    TokenHourDatasProjectionRoot<?, ?> tokenHourDataProjection = new TokenHourDatasProjectionRoot<>()
+      .id()
+      .periodStartUnix()
+      .high()
+      .open()
+      .close()
+      .low();
+
+    GraphQLQueryRequest request = new GraphQLQueryRequest(tokenHourDataQuery, tokenHourDataProjection);
+    GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
+
+    List<TokenHourData> origin = response.extractValueAsObject("tokenHourDatas", new TypeRef<List<TokenHourData>>() {});
+
+    return origin;
+  }
+
+  /**
+   * Ohlc
+   * Year: 每 1 天一个点，共 365 个点
+   * 
+   * @param tokenId
+   * @return
+   */
+  public List<TokenDayData> yearOhlcByTokenId(String tokenId) {
+    TokenDayDatasGraphQLQuery tokenDayDatasQuery = TokenDayDatasGraphQLQuery.newRequest()
+      .first(365)
+      .orderBy(TokenDayData_orderBy.date)
+      .orderDirection(OrderDirection.desc)
+      .where(new TokenDayData_filter() {
+        {
+          setToken_(new Token_filter() {
+            {
+              setId(tokenId);
+            }
+          });
+        }
+      })
+      .queryName("TokenMarketSubgraphFetcher_yearOhlcByTokenId")
+      .build();
+
+    TokenDayDatasProjectionRoot<?, ?> tokenDayDatasProjection = new TokenDayDatasProjectionRoot<>()
+      .id()
+      .date()
+      .high()
+      .open()
+      .close()
+      .low();
+
+    GraphQLQueryRequest request = new GraphQLQueryRequest(tokenDayDatasQuery, tokenDayDatasProjection);
+    GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
+
+    List<TokenDayData> origin = response.extractValueAsObject("tokenDayDatas", new TypeRef<List<TokenDayData>>() {});
+
+    return origin;
+  }
+
+  /**
+   * PriceHistory
    * Day: 每 10 分钟一个点，共 144 个点
    * 
    * @param tokenId
@@ -82,7 +252,9 @@ public class TokenMarketSubgraphFetcher {
      * 3. 为了提高精度，也可以每 10 条数据汇总一次，取平均值 (暂未实现)
      */
     TokenMinuteDatasGraphQLQuery tokenMinuteDatasQuery = TokenMinuteDatasGraphQLQuery.newRequest()
-      .first(144 * 10)
+      // the subgraphs only allow client to query 1000 records at most
+      // but actually we need 1440 records
+      .first(1000)
       .orderBy(TokenMinuteData_orderBy.periodStartUnix)
       .orderDirection(OrderDirection.desc)
       .where(new TokenMinuteData_filter() {
@@ -119,6 +291,7 @@ public class TokenMarketSubgraphFetcher {
   }
 
   /**
+   * PriceHistory
    * Hour: 每 5 分钟一个点，共 12 个点
    * 
    * @param tokenId
@@ -163,6 +336,7 @@ public class TokenMarketSubgraphFetcher {
   }
 
   /**
+   * PriceHistory
    * Week: 每 1 小时一个点，共 168 个点
    * 
    * @param tokenId
@@ -199,6 +373,7 @@ public class TokenMarketSubgraphFetcher {
   }
 
   /**
+   * PriceHistory
    * Month: 每 4 小时一个点，共 180 个点
    * 
    * @param tokenId
@@ -243,6 +418,7 @@ public class TokenMarketSubgraphFetcher {
   }
 
   /**
+   * PriceHistory
    * Year: 每 1 天一个点，共 365 个点
    * 
    * @param tokenId
