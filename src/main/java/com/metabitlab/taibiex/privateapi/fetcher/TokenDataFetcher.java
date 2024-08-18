@@ -3,6 +3,8 @@ package com.metabitlab.taibiex.privateapi.fetcher;
 import java.util.List;
 import java.util.function.Function;
 
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
+import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,7 +27,6 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.FeeData;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.HistoryDuration;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PriceSource;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedAmount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedOhlc;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
@@ -43,14 +44,19 @@ import graphql.execution.DataFetcherResult;
 @DgsComponent
 public class TokenDataFetcher {
 
-  private final TokenService tokenService;
-  private final TokenProjectService tokenProjectService;
+    private final TokenService tokenService;
 
-  public TokenDataFetcher(TokenService tokenService,
-                          TokenProjectService tokenProjectService) {
-    this.tokenService = tokenService;
-    this.tokenProjectService = tokenProjectService;
-  }
+    private final TokenProjectService tokenProjectService;
+
+    private final TokenMarketService tokenMarketService;
+
+    public TokenDataFetcher(TokenService tokenService,
+                            TokenProjectService tokenProjectService,
+                            TokenMarketService tokenMarketService) {
+        this.tokenService = tokenService;
+        this.tokenProjectService = tokenProjectService;
+        this.tokenMarketService = tokenMarketService;
+    }
 
   @Autowired
   BundleSubgraphFetcher bundleSubgraphFetcher;
@@ -62,23 +68,21 @@ public class TokenDataFetcher {
   TokenMarketSubgraphFetcher tokenMarketSubgraphFetcher;
 
   @DgsQuery
-  public DataFetcherResult<Token> token(@InputArgument Chain chain, 
-                                        @InputArgument String address) {
+  public DataFetcherResult<Token> token(@InputArgument Chain chain,
+      @InputArgument String address) {
 
-    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token 
-      = tokenSubgraphFetcher.token(address);
+    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = tokenSubgraphFetcher.token(address);
 
     Encoder encoder = Base64.getEncoder();
 
     String tokenId = encoder.encodeToString(
-      ("Token:" + chain + "_" + address).getBytes()
-    );
+        ("Token:" + chain + "_" + address).getBytes());
 
     Token t = new Token() {
       {
         setId(tokenId);
         setChain(chain);
-        setAddress(token.getId());
+        setAddress(address);
         setStandard(TokenStandard.ERC20);
         setName(token.getName());
         setSymbol(token.getSymbol());
@@ -89,11 +93,11 @@ public class TokenDataFetcher {
         });
       }
     };
-    
+
     return DataFetcherResult.<Token>newResult()
-                            .data(t)
-                            .localContext(token)
-                            .build();
+        .data(t)
+        .localContext(token)
+        .build();
   }
 
   @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Market)
@@ -102,132 +106,75 @@ public class TokenDataFetcher {
       throw new UnSupportCurrencyException("This currency is not supported", currency);
     }
 
-    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
-      = env.getLocalContext();
+    com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t = env.getSource();
 
-    Token token = env.getSource();
+    return tokenMarketService.tokenMarket(t, currency);
+  }
 
-    Encoder encoder = Base64.getEncoder();
+  @DgsData(parentType = "TokenMarket", field = "pricePercentChange")
+  public Amount pricePercentChange(@InputArgument HistoryDuration duration, DgsDataFetchingEnvironment env) {
+    TokenMarket tokenMarket = env.getSource();
 
-    Bundle bundle = bundleSubgraphFetcher.bundle();
-    double price = bundle.getEthPriceUSD().multiply(t.getDerivedETH()).doubleValue();
+    return tokenMarketService.getPricePercentChange(tokenMarket, duration);
+  }
 
-    double totalValueLocked = t.getTotalValueLockedUSD().doubleValue();
+  @DgsData(parentType = "TokenMarket", field = "volume")
+  public Amount volume(@InputArgument HistoryDuration duration, DgsDataFetchingEnvironment env) {
+    TokenMarket tokenMarket = env.getSource();
 
-    double volume = t.getVolumeUSD().doubleValue();
-
-    String marketId = encoder.encodeToString(
-      ("TokenMarket:" + token.getChain() + "_" + token.getAddress() + "_" + currency).getBytes()
-    );
-    String priceAmountId = encoder.encodeToString(
-      ("Amount:" + price + "_" + currency).getBytes()
-    );
-    String totalValueLockedAmountId = encoder.encodeToString(
-      ("Amount:" + totalValueLocked + "_" + currency).getBytes()
-    );
-    String volumeAmountId = encoder.encodeToString(
-      ("Amount:" + volume + "_" + currency).getBytes()
-    );
-
-    return new TokenMarket() {
-      {
-        setId(marketId);
-        setToken(token);
-        setPrice(new Amount() {
-          {
-            setId(priceAmountId);
-            setCurrency(currency);
-            setValue(price);
-          }
-        });
-        // 仅支持 Subgraph V3
-        setPriceSource(PriceSource.SUBGRAPH_V3);
-        setTotalValueLocked(new Amount() {
-          {
-            setId(totalValueLockedAmountId);
-            setCurrency(currency);
-            setValue(totalValueLocked);
-          }
-        });
-        setFullyDilutedValuation(new Amount() {
-          {
-            // TODO: 需要填值
-          }
-        });
-        setVolume(new Amount() {
-          {
-            setId(volumeAmountId);
-            setCurrency(currency);
-            setValue(volume);
-          }
-        });
-        setPricePercentChange(new Amount() {
-          {
-            // TODO: 需要填值
-          }
-        });
-        setPriceHighLow(new Amount() {
-          {
-            // TODO: 需要填值
-          }
-        });
-      }
-    };
+    return tokenMarketService.getVolume(tokenMarket, duration);
   }
 
   @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Project)
   public TokenProject project(DgsDataFetchingEnvironment env) {
-    com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t
-      = env.getSource();
+    com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t = env.getSource();
 
     return tokenProjectService.findByAddress(t);
   }
 
   @DgsData(parentType = DgsConstants.TOKENPROJECT.TYPE_NAME, field = DgsConstants.TOKENPROJECT.Markets)
-  public List<TokenProjectMarket> markets(@InputArgument List<Currency> currencies, 
-                                          DgsDataFetchingEnvironment env) {
+  public List<TokenProjectMarket> markets(@InputArgument List<Currency> currencies,
+      DgsDataFetchingEnvironment env) {
     System.out.println(currencies);
 
     // TODO: 未获取真实数据
     List<TokenProjectMarket> markets = Arrays.asList(
-      new TokenProjectMarket() {
-        {
-          setId("uuid 1");
-          setCurrency(Currency.AUD); 
-        }
-      }, 
-      new TokenProjectMarket() {
-        {
-          setId("uuid 2");
-          setCurrency(Currency.USD); 
-        }
-      }
-    );
+        new TokenProjectMarket() {
+          {
+            setId("uuid 1");
+            setCurrency(Currency.AUD);
+          }
+        },
+        new TokenProjectMarket() {
+          {
+            setId("uuid 2");
+            setCurrency(Currency.USD);
+          }
+        });
 
     return markets.stream()
-                  .filter(market -> currencies.contains(market.getCurrency()))
-                  .toList();
+        .filter(market -> currencies.contains(market.getCurrency()))
+        .toList();
   }
 
-  private <T> List<TimestampedOhlc> fetchOhlc(HistoryDuration duration, 
-                                              String tokenId,
-                                              Function<String, List<T>> fetcher, 
-                                              Function<T, TimestampedOhlc> mapper) {
+  private <T> List<TimestampedOhlc> fetchOhlc(HistoryDuration duration,
+      String tokenId,
+      Function<String, List<T>> fetcher,
+      Function<T, TimestampedOhlc> mapper) {
     List<T> history = fetcher.apply(tokenId);
     if (history == null) {
-        return null;
+      return null;
     }
 
     return history.stream()
-                  .map(mapper)
-                  .toList();
+        .map(mapper)
+        .toList();
   }
 
   @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.Ohlc)
   public List<TimestampedOhlc> ohlc(@InputArgument HistoryDuration duration,
-                                    DgsDataFetchingEnvironment env) {
-    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
-      = env.getLocalContext();
+      DgsDataFetchingEnvironment env) {
+    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = env.getLocalContext();
 
     Encoder encoder = Base64.getEncoder();
 
@@ -236,20 +183,19 @@ public class TokenDataFetcher {
       case DAY:
         ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::dayOhlcByTokenId, item -> {
           String ohlcId = encoder.encodeToString(
-            ("TimestampedOhlc:" + item.getPeriodStartUnix() + "_" + item.getOpen() + "_" + item.getHigh() + "_" + item.getLow() + "_" + item.getClose()).getBytes()
-          );
+              ("TimestampedOhlc:" + item.getPeriodStartUnix()
+                  + "_" + item.getOpen()
+                  + "_" + item.getHigh() + "_"
+                  + item.getLow()
+                  + "_" + item.getClose()).getBytes());
           String openAmountId = encoder.encodeToString(
-            ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes());
           String highAmountId = encoder.encodeToString(
-            ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes());
           String lowAmountId = encoder.encodeToString(
-            ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes());
           String closeAmountId = encoder.encodeToString(
-            ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes());
 
           return new TimestampedOhlc() {
             {
@@ -290,22 +236,24 @@ public class TokenDataFetcher {
         break;
       case HOUR:
         ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::hourOhlcByTokenId, item -> {
+          String ohlcId = encoder.encodeToString(
+              ("TimestampedOhlc:" + item.getPeriodStartUnix()
+                  + "_" + item.getOpen()
+                  + "_" + item.getHigh() + "_"
+                  + item.getLow()
+                  + "_" + item.getClose()).getBytes());
           String openAmountId = encoder.encodeToString(
-            ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes());
           String highAmountId = encoder.encodeToString(
-            ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes());
           String lowAmountId = encoder.encodeToString(
-            ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes());
           String closeAmountId = encoder.encodeToString(
-            ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes());
 
           return new TimestampedOhlc() {
             {
-              setId(item.getId());
+              setId(ohlcId);
               setTimestamp(item.getPeriodStartUnix());
               setOpen(new Amount() {
                 {
@@ -342,22 +290,24 @@ public class TokenDataFetcher {
         break;
       case WEEK:
         ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::weekOhlcByTokenId, item -> {
+          String ohlcId = encoder.encodeToString(
+              ("TimestampedOhlc:" + item.getPeriodStartUnix()
+                  + "_" + item.getOpen()
+                  + "_" + item.getHigh() + "_"
+                  + item.getLow()
+                  + "_" + item.getClose()).getBytes());
           String openAmountId = encoder.encodeToString(
-            ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes());
           String highAmountId = encoder.encodeToString(
-            ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes());
           String lowAmountId = encoder.encodeToString(
-            ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes());
           String closeAmountId = encoder.encodeToString(
-            ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes());
 
           return new TimestampedOhlc() {
             {
-              setId(item.getId());
+              setId(ohlcId);
               setTimestamp(item.getPeriodStartUnix());
               setOpen(new Amount() {
                 {
@@ -394,22 +344,24 @@ public class TokenDataFetcher {
         break;
       case MONTH:
         ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::monthOhlcByTokenId, item -> {
+          String ohlcId = encoder.encodeToString(
+              ("TimestampedOhlc:" + item.getPeriodStartUnix()
+                  + "_" + item.getOpen()
+                  + "_" + item.getHigh() + "_"
+                  + item.getLow()
+                  + "_" + item.getClose()).getBytes());
           String openAmountId = encoder.encodeToString(
-            ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes());
           String highAmountId = encoder.encodeToString(
-            ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes());
           String lowAmountId = encoder.encodeToString(
-            ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes());
           String closeAmountId = encoder.encodeToString(
-            ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes());
 
           return new TimestampedOhlc() {
             {
-              setId(item.getId());
+              setId(ohlcId);
               setTimestamp(item.getPeriodStartUnix());
               setOpen(new Amount() {
                 {
@@ -446,22 +398,24 @@ public class TokenDataFetcher {
         break;
       case YEAR:
         ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::yearOhlcByTokenId, item -> {
+          String ohlcId = encoder.encodeToString(
+              ("TimestampedOhlc:" + item.getDate()
+                  + "_" + item.getOpen()
+                  + "_" + item.getHigh() + "_"
+                  + item.getLow()
+                  + "_" + item.getClose()).getBytes());
           String openAmountId = encoder.encodeToString(
-            ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getOpen() + "_" + Currency.USD).getBytes());
           String highAmountId = encoder.encodeToString(
-            ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getHigh() + "_" + Currency.USD).getBytes());
           String lowAmountId = encoder.encodeToString(
-            ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getLow() + "_" + Currency.USD).getBytes());
           String closeAmountId = encoder.encodeToString(
-            ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes()
-          );
+              ("Amount:" + item.getClose() + "_" + Currency.USD).getBytes());
 
           return new TimestampedOhlc() {
             {
-              setId(item.getId());
+              setId(ohlcId);
               setTimestamp(item.getDate());
               setOpen(new Amount() {
                 {
@@ -503,25 +457,24 @@ public class TokenDataFetcher {
     return ohlcList;
   }
 
-  private <T> List<TimestampedAmount> fetchHistory(HistoryDuration duration, 
-                                                   String tokenId,
-                                                   Function<String, List<T>> fetcher, 
-                                                   Function<T, TimestampedAmount> mapper) {
+  private <T> List<TimestampedAmount> fetchHistory(HistoryDuration duration,
+      String tokenId,
+      Function<String, List<T>> fetcher,
+      Function<T, TimestampedAmount> mapper) {
     List<T> history = fetcher.apply(tokenId);
     if (history == null) {
-        return null;
+      return null;
     }
 
     return history.stream()
-                  .map(mapper)
-                  .toList();
+        .map(mapper)
+        .toList();
   }
 
   @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.PriceHistory)
   public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration,
-                                              DgsDataFetchingEnvironment env) {
-    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
-      = env.getLocalContext();
+      DgsDataFetchingEnvironment env) {
+    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = env.getLocalContext();
 
     Encoder encoder = Base64.getEncoder();
 
@@ -535,8 +488,7 @@ public class TokenDataFetcher {
           int timestamp = item.getPeriodStartUnix();
 
           String amountId = encoder.encodeToString(
-            ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes()
-          );
+              ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes());
 
           TimestampedAmount timestampedAmount = new TimestampedAmount() {
             {
@@ -556,8 +508,7 @@ public class TokenDataFetcher {
           int timestamp = item.getPeriodStartUnix();
 
           String amountId = encoder.encodeToString(
-            ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes()
-          );
+              ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes());
 
           TimestampedAmount timestampedAmount = new TimestampedAmount() {
             {
@@ -577,8 +528,7 @@ public class TokenDataFetcher {
           int timestamp = item.getPeriodStartUnix();
 
           String amountId = encoder.encodeToString(
-            ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes()
-          );
+              ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes());
 
           TimestampedAmount timestampedAmount = new TimestampedAmount() {
             {
@@ -598,8 +548,7 @@ public class TokenDataFetcher {
           int timestamp = item.getPeriodStartUnix();
 
           String amountId = encoder.encodeToString(
-            ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes()
-          );
+              ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes());
 
           TimestampedAmount timestampedAmount = new TimestampedAmount() {
             {
@@ -619,8 +568,7 @@ public class TokenDataFetcher {
           int timestamp = item.getDate();
 
           String amountId = encoder.encodeToString(
-            ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes()
-          );
+              ("TimestampedAmount:" + timestamp + "_" + priceUSD + "_" + Currency.USD).getBytes());
 
           TimestampedAmount timestampedAmount = new TimestampedAmount() {
             {
@@ -636,16 +584,17 @@ public class TokenDataFetcher {
         break;
       default:
         throw new UnSupportDurationException("This duration is not supported", duration);
-    };
+    }
+    ;
 
     return history;
   }
 
   @DgsData(parentType = "Query", field = "topTokens")
   public List<Token> topTokens(@InputArgument Chain chain,
-                               @InputArgument Integer page,
-                               @InputArgument Integer pageSize,
-                               @InputArgument TokenSortableField orderBy) {
+      @InputArgument Integer page,
+      @InputArgument Integer pageSize,
+      @InputArgument TokenSortableField orderBy) {
     return tokenService.topTokens(chain, page, pageSize, orderBy);
   }
 
