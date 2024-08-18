@@ -6,6 +6,7 @@ import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;
+import java.util.Base64;
 
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableField;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
@@ -15,12 +16,15 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenMarketSubgraphFetc
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.TokenDayData;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.TokenHourData;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.TokenMinuteData;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.FeeData;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.HistoryDuration;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PriceSource;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedAmount;
@@ -73,7 +77,11 @@ public class TokenDataFetcher {
         setStandard(TokenStandard.ERC20);
         setName(token.getName());
         setSymbol(token.getSymbol());
-        // TODO: 仍有剩余字段未填值
+        setFeeData(new FeeData() {
+          {
+            // TODO: 字段填值
+          }
+        });
       }
     };
     
@@ -97,24 +105,33 @@ public class TokenDataFetcher {
     Bundle bundle = bundleSubgraphFetcher.bundle();
     double price = bundle.getEthPriceUSD().multiply(t.getDerivedETH()).doubleValue();
 
+    StringBuilder marketId = new StringBuilder();
+    marketId.append("TokenMarket");
+    marketId.append(":");
+    marketId.append(token.getChain());
+    marketId.append("_");
+    marketId.append(token.getAddress());
+    marketId.append("_");
+    marketId.append(currency);
+
     return new TokenMarket() {
       {
-        setId("uuid");
+        setId(Base64.getEncoder().encodeToString((marketId).toString().getBytes()));
         setToken(token);
         setPrice(new Amount() {
           {
-            setId("uuid");
             setCurrency(Currency.USD);
             setValue(price);
+            setId("uuid");
           }
         });
         // 仅支持 Subgraph V3
         setPriceSource(PriceSource.SUBGRAPH_V3);
         setTotalValueLocked(new Amount() {
           {
-            setId("uuid");
             setCurrency(Currency.USD);
             setValue(t.getTotalValueLocked().doubleValue());
+            setId("uuid");
           }
         });
         setFullyDilutedValuation(new Amount() {
@@ -124,9 +141,9 @@ public class TokenDataFetcher {
         });
         setVolume(new Amount() {
           {
-            setId("uuid");
             setCurrency(Currency.USD);
             setValue(t.getVolume().doubleValue());
+            setId("uuid");
           }
         });
         setPricePercentChange(new Amount() {
@@ -187,59 +204,154 @@ public class TokenDataFetcher {
     com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
       = env.getLocalContext();
 
-
-    List<TokenDayData> tokenDayDataList = tokenMarketSubgraphFetcher.tokenOhlcById(t.getId());
-    if (tokenDayDataList == null) {
+    List<TokenMinuteData> tokenMinuteDataList = tokenMarketSubgraphFetcher.ohlcByTokenId(t.getId());
+    if (tokenMinuteDataList == null) {
       return null;
     }
 
-    return tokenDayDataList.stream()
+    return tokenMinuteDataList.stream()
                            .map(item -> {
                               TimestampedOhlc ohlc = new TimestampedOhlc();
+
                               ohlc.setId(item.getId());
-                              ohlc.setTimestamp(item.getDate());
+                              ohlc.setTimestamp(item.getPeriodStartUnix());
                               ohlc.setClose(new Amount() {
                                 {
-                                  setId("uuid");
                                   setCurrency(Currency.USD);
                                   setValue(item.getClose().doubleValue());
+                                  setId("uuid");
                                 }
                               });
                               ohlc.setHigh(new Amount() {
                                 {
-                                  setId("uuid");
                                   setCurrency(Currency.USD);
                                   setValue(item.getHigh().doubleValue());
+                                  setId("uuid");
                                 }
                               });
                               ohlc.setLow(new Amount() {
                                 {
-                                  setId("uuid");
                                   setCurrency(Currency.USD);
                                   setValue(item.getLow().doubleValue());
+                                  setId("uuid");
                                 }
                               });
                               ohlc.setOpen(new Amount() {
                                 {
-                                  setId("uuid");
                                   setCurrency(Currency.USD);
                                   setValue(item.getOpen().doubleValue());
+                                  setId("uuid");
                                 }
                               });
+
                               return ohlc;
                             })
                            .toList();
   }
 
   @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.PriceHistory)
-  public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration) {
-    if (duration != HistoryDuration.DAY) {
-      throw new UnSupportDurationException("This duration is not supported", duration);
+  public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration,
+                                              DgsDataFetchingEnvironment env) {
+    com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
+      = env.getLocalContext();
+
+    if (duration == HistoryDuration.DAY) {
+      List<TokenMinuteData> history = tokenMarketSubgraphFetcher.dayPriceHistoryByTokenId(t.getId());
+      if (history == null) {
+        return null;
+      }
+
+      return history.stream()
+                    .map(item -> {
+                      TimestampedAmount timestampedAmount = new TimestampedAmount();
+
+                      timestampedAmount.setId(item.getId());
+                      timestampedAmount.setTimestamp(item.getPeriodStartUnix());
+                      timestampedAmount.setValue(item.getPriceUSD().doubleValue());
+                      timestampedAmount.setCurrency(Currency.USD);
+
+                      return timestampedAmount;
+                    })
+                    .toList();
+    }
+    if (duration == HistoryDuration.HOUR) {
+      List<TokenMinuteData> history = tokenMarketSubgraphFetcher.hourPriceHistoryByTokenId(t.getId());
+      if (history == null) {
+        return null;
+      }
+
+      return history.stream()
+                    .map(item -> {
+                      TimestampedAmount timestampedAmount = new TimestampedAmount();
+
+                      timestampedAmount.setId(item.getId());
+                      timestampedAmount.setTimestamp(item.getPeriodStartUnix());
+                      timestampedAmount.setValue(item.getPriceUSD().doubleValue());
+                      timestampedAmount.setCurrency(Currency.USD);
+
+                      return timestampedAmount;
+                    })
+                    .toList();
+    }
+    if (duration == HistoryDuration.WEEK) {
+      List<TokenHourData> history = tokenMarketSubgraphFetcher.weekPriceHistoryByTokenId(t.getId());
+      if (history == null) {
+        return null;
+      }
+
+      return history.stream()
+                    .map(item -> {
+                      TimestampedAmount timestampedAmount = new TimestampedAmount();
+
+                      timestampedAmount.setId(item.getId());
+                      timestampedAmount.setTimestamp(item.getPeriodStartUnix());
+                      timestampedAmount.setValue(item.getPriceUSD().doubleValue());
+                      timestampedAmount.setCurrency(Currency.USD);
+
+                      return timestampedAmount;
+                    })
+                    .toList();
+    }
+    if (duration == HistoryDuration.MONTH) {
+      List<TokenHourData> history = tokenMarketSubgraphFetcher.monthPriceHistoryByTokenId(t.getId());
+      if (history == null) {
+        return null;
+      }
+
+      return history.stream()
+                    .map(item -> {
+                      TimestampedAmount timestampedAmount = new TimestampedAmount();
+
+                      timestampedAmount.setId(item.getId());
+                      timestampedAmount.setTimestamp(item.getPeriodStartUnix());
+                      timestampedAmount.setValue(item.getPriceUSD().doubleValue());
+                      timestampedAmount.setCurrency(Currency.USD);
+
+                      return timestampedAmount;
+                    })
+                    .toList();
+    }
+    if (duration == HistoryDuration.YEAR) {
+      List<TokenDayData> history = tokenMarketSubgraphFetcher.yearPriceHistoryByTokenId(t.getId());
+      if (history == null) {
+        return null;
+      }
+
+      return history.stream()
+                    .map(item -> {
+                      TimestampedAmount timestampedAmount = new TimestampedAmount();
+
+                      timestampedAmount.setId(item.getId());
+                      timestampedAmount.setTimestamp(item.getDate());
+                      timestampedAmount.setValue(item.getClose().doubleValue());
+                      timestampedAmount.setCurrency(Currency.USD);
+
+                      return timestampedAmount;
+                    })
+                    .toList();
     }
 
-    System.out.println(duration);
-
-    return Arrays.asList();
+    throw new UnSupportDurationException("This duration is not supported", duration);
   }
 
   @DgsData(parentType = "Query", field = "topTokens")
