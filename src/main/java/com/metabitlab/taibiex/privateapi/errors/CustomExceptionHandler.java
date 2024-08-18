@@ -30,7 +30,7 @@ public class CustomExceptionHandler implements DataFetcherExceptionHandler {
       debugInfo.put("Currency", ((UnSupportCurrencyException)exception).getCurrency());
 
       TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
-              .message(exception.getMessage())
+              .message("privateapi exception: " + exception.getMessage())
               .debugInfo(debugInfo)
               .path(handlerParameters.getPath()).build();
 
@@ -45,7 +45,7 @@ public class CustomExceptionHandler implements DataFetcherExceptionHandler {
       debugInfo.put("Duration", ((UnSupportDurationException)exception).getDuration());
 
       TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
-              .message(exception.getMessage())
+              .message("privateapi exception: " + exception.getMessage())
               .debugInfo(debugInfo)
               .path(handlerParameters.getPath()).build();
 
