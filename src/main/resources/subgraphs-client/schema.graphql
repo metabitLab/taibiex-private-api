@@ -4342,6 +4342,22 @@ type Subscription {
     subgraphError: _SubgraphErrorPolicy_! = deny
   ): [TokenHourData!]!
 
+  tokenMinuteData(
+    id: ID!
+    block: Block_height
+    subgraphError: _SubgraphErrorPolicy_! = deny
+  ): TokenMinuteData
+
+  tokenMinuteDatas(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: TokenMinuteData_orderBy
+    orderDirection: OrderDirection
+    where: TokenMinuteData_filter
+    block: Block_height
+    subgraphError: _SubgraphErrorPolicy_! = deny
+  ): [TokenMinuteData!]!
+
   """Access to subgraph metadata"""
   _meta(block: Block_height): _Meta_
 }
@@ -5839,6 +5855,206 @@ input TokenHourData_filter {
 }
 
 enum TokenHourData_orderBy {
+  id
+  periodStartUnix
+  token
+  token__id
+  token__symbol
+  token__name
+  token__decimals
+  token__totalSupply
+  token__volume
+  token__volumeUSD
+  token__untrackedVolumeUSD
+  token__feesUSD
+  token__txCount
+  token__poolCount
+  token__totalValueLocked
+  token__totalValueLockedUSD
+  token__totalValueLockedUSDUntracked
+  token__derivedETH
+  volume
+  volumeUSD
+  untrackedVolumeUSD
+  totalValueLocked
+  totalValueLockedUSD
+  priceUSD
+  feesUSD
+  open
+  high
+  low
+  close
+}
+
+type TokenMinuteData {
+  # token address concatenated with minute
+  id: ID!
+  # unix timestamp for start of minute
+  periodStartUnix: Int!
+  # pointer to token
+  token: Token!
+  # volume in token units
+  volume: BigDecimal!
+  # volume in derived USD
+  volumeUSD: BigDecimal!
+
+  # 不在token白名单的token的交易量也统计
+  # volume in USD even on pools with less reliable USD values
+  untrackedVolumeUSD: BigDecimal!
+
+  # 表示锁定该token的值, 单位ether, 锁定的token的价值越大表示，该token流动性就越大，估值换算((1个该token可以换多少个其他token))就越准确
+  # liquidity across all pools in token units
+  totalValueLocked: BigDecimal!
+  # liquidity across all pools in derived USD
+  totalValueLockedUSD: BigDecimal!
+  # price at end of period in USD
+  priceUSD: BigDecimal!
+  # fees in USD
+  feesUSD: BigDecimal!
+  # opening price USD
+  open: BigDecimal!
+  # high price USD
+  high: BigDecimal!
+  # low price USD
+  low: BigDecimal!
+  # close price USD
+  close: BigDecimal!
+}
+
+input TokenMinuteData_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  periodStartUnix: Int
+  periodStartUnix_not: Int
+  periodStartUnix_gt: Int
+  periodStartUnix_lt: Int
+  periodStartUnix_gte: Int
+  periodStartUnix_lte: Int
+  periodStartUnix_in: [Int!]
+  periodStartUnix_not_in: [Int!]
+  token: String
+  token_not: String
+  token_gt: String
+  token_lt: String
+  token_gte: String
+  token_lte: String
+  token_in: [String!]
+  token_not_in: [String!]
+  token_contains: String
+  token_contains_nocase: String
+  token_not_contains: String
+  token_not_contains_nocase: String
+  token_starts_with: String
+  token_starts_with_nocase: String
+  token_not_starts_with: String
+  token_not_starts_with_nocase: String
+  token_ends_with: String
+  token_ends_with_nocase: String
+  token_not_ends_with: String
+  token_not_ends_with_nocase: String
+  token_: Token_filter
+  volume: BigDecimal
+  volume_not: BigDecimal
+  volume_gt: BigDecimal
+  volume_lt: BigDecimal
+  volume_gte: BigDecimal
+  volume_lte: BigDecimal
+  volume_in: [BigDecimal!]
+  volume_not_in: [BigDecimal!]
+  volumeUSD: BigDecimal
+  volumeUSD_not: BigDecimal
+  volumeUSD_gt: BigDecimal
+  volumeUSD_lt: BigDecimal
+  volumeUSD_gte: BigDecimal
+  volumeUSD_lte: BigDecimal
+  volumeUSD_in: [BigDecimal!]
+  volumeUSD_not_in: [BigDecimal!]
+  untrackedVolumeUSD: BigDecimal
+  untrackedVolumeUSD_not: BigDecimal
+  untrackedVolumeUSD_gt: BigDecimal
+  untrackedVolumeUSD_lt: BigDecimal
+  untrackedVolumeUSD_gte: BigDecimal
+  untrackedVolumeUSD_lte: BigDecimal
+  untrackedVolumeUSD_in: [BigDecimal!]
+  untrackedVolumeUSD_not_in: [BigDecimal!]
+  totalValueLocked: BigDecimal
+  totalValueLocked_not: BigDecimal
+  totalValueLocked_gt: BigDecimal
+  totalValueLocked_lt: BigDecimal
+  totalValueLocked_gte: BigDecimal
+  totalValueLocked_lte: BigDecimal
+  totalValueLocked_in: [BigDecimal!]
+  totalValueLocked_not_in: [BigDecimal!]
+  totalValueLockedUSD: BigDecimal
+  totalValueLockedUSD_not: BigDecimal
+  totalValueLockedUSD_gt: BigDecimal
+  totalValueLockedUSD_lt: BigDecimal
+  totalValueLockedUSD_gte: BigDecimal
+  totalValueLockedUSD_lte: BigDecimal
+  totalValueLockedUSD_in: [BigDecimal!]
+  totalValueLockedUSD_not_in: [BigDecimal!]
+  priceUSD: BigDecimal
+  priceUSD_not: BigDecimal
+  priceUSD_gt: BigDecimal
+  priceUSD_lt: BigDecimal
+  priceUSD_gte: BigDecimal
+  priceUSD_lte: BigDecimal
+  priceUSD_in: [BigDecimal!]
+  priceUSD_not_in: [BigDecimal!]
+  feesUSD: BigDecimal
+  feesUSD_not: BigDecimal
+  feesUSD_gt: BigDecimal
+  feesUSD_lt: BigDecimal
+  feesUSD_gte: BigDecimal
+  feesUSD_lte: BigDecimal
+  feesUSD_in: [BigDecimal!]
+  feesUSD_not_in: [BigDecimal!]
+  open: BigDecimal
+  open_not: BigDecimal
+  open_gt: BigDecimal
+  open_lt: BigDecimal
+  open_gte: BigDecimal
+  open_lte: BigDecimal
+  open_in: [BigDecimal!]
+  open_not_in: [BigDecimal!]
+  high: BigDecimal
+  high_not: BigDecimal
+  high_gt: BigDecimal
+  high_lt: BigDecimal
+  high_gte: BigDecimal
+  high_lte: BigDecimal
+  high_in: [BigDecimal!]
+  high_not_in: [BigDecimal!]
+  low: BigDecimal
+  low_not: BigDecimal
+  low_gt: BigDecimal
+  low_lt: BigDecimal
+  low_gte: BigDecimal
+  low_lte: BigDecimal
+  low_in: [BigDecimal!]
+  low_not_in: [BigDecimal!]
+  close: BigDecimal
+  close_not: BigDecimal
+  close_gt: BigDecimal
+  close_lt: BigDecimal
+  close_gte: BigDecimal
+  close_lte: BigDecimal
+  close_in: [BigDecimal!]
+  close_not_in: [BigDecimal!]
+  _change_block: BlockChangedFilter
+  """Filter for the block changed event."""
+
+  and: [TokenMinuteData_filter]
+  or: [TokenMinuteData_filter]
+}
+
+enum TokenMinuteData_orderBy {
   id
   periodStartUnix
   token
