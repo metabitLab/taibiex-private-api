@@ -104,8 +104,8 @@ public class TokenDataFetcher {
 
     com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t 
       = env.getLocalContext();
-    com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token token 
-      = env.getSource();
+
+    Token token = env.getSource();
 
     Encoder encoder = Base64.getEncoder();
 
