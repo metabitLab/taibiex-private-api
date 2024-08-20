@@ -10,6 +10,7 @@ import com.metabitlab.taibiex.privateapi.repository.TokenProjectRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
+import java.util.List;
 
 @Service
 public class TokenProjectService {
@@ -22,6 +23,7 @@ public class TokenProjectService {
 
     public TokenProject findByAddress(Token token) {
         TokenProject tokenProject = new TokenProject();
+        tokenProject.setTokens(List.of(token));
         tokenProject.setId(Base64.getEncoder().encodeToString(("TokenProject:TABI_" + token.getAddress() + "_" + token.getSymbol()).getBytes()));
         TokenProjectEntity projectEntity = tokenProjectRepository.findByAddress(token.getAddress());
         if (projectEntity != null){

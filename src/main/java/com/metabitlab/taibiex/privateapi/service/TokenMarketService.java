@@ -11,7 +11,9 @@ import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TokenMarketService {
@@ -99,6 +101,199 @@ public class TokenMarketService {
             return getYearPricePercentChange(tokenMarket, token.getAddress());
         }
     }
+
+    public Amount getPriceHighLow(TokenMarket tokenMarket, HistoryDuration duration, HighLow highLow){
+        Token token = tokenMarket.getToken();
+        if (duration == HistoryDuration.HOUR) {
+            return getHourPriceHighLow(tokenMarket, token.getAddress(), highLow);
+        } else if (duration == HistoryDuration.FIVE_MINUTE) {
+            return getFiveMinutePriceHighLow(tokenMarket, token.getAddress(), highLow);
+        } else if (duration == HistoryDuration.DAY) {
+            return getDayPriceHighLow(tokenMarket, token.getAddress(), highLow);
+        } else if (duration == HistoryDuration.WEEK){
+            return getWeekPriceHighLow(tokenMarket, token.getAddress(), highLow);
+        } else if (duration == HistoryDuration.MONTH) {
+            return getMonthPriceHighLow(tokenMarket, token.getAddress(), highLow);
+        } else {
+            return getYearPriceHighLow(tokenMarket, token.getAddress(), highLow);
+        }
+    }
+
+    private Amount getFiveMinutePriceHighLow(TokenMarket tokenMarket, String tokenAddress, HighLow highLow) {
+        List<TokenMinuteData> tokenMinuteData = tokenMinuteDataSubgraphFetcher.tokenMinuteDatas(0, 5,
+                TokenMinuteData_orderBy.periodStartUnix,
+                OrderDirection.desc,
+                new TokenMinuteData_filter() {
+                    {
+                        setId(tokenAddress.toLowerCase());
+                    }
+                });
+
+        if (tokenMinuteData.isEmpty()){
+            return null;
+        }
+        Amount amount = new Amount() {
+            {
+                setId(getAmountIdEncoded(tokenMinuteData.get(0).getPriceUSD().doubleValue(), tokenMarket.getToken().getSymbol()));
+                setCurrency(Currency.USD);
+            }
+        };
+        if (highLow == HighLow.HIGH) {
+            BigDecimal max = tokenMinuteData.stream().map(TokenMinuteData::getPriceUSD).max(BigDecimal::compareTo).get();
+            amount.setValue(max.doubleValue());
+        } else {
+            BigDecimal min = tokenMinuteData.stream().map(TokenMinuteData::getPriceUSD).min(BigDecimal::compareTo).get();
+            amount.setValue(min.doubleValue());
+        }
+        return amount;
+    }
+
+    private Amount getDayPriceHighLow(TokenMarket tokenMarket, String tokenAddress, HighLow highLow) {
+        List<TokenHourData> tokenHourData = tokenHourDataSubgraphFetcher.tokenHourDatas(0, 24,
+                TokenHourData_orderBy.periodStartUnix,
+                OrderDirection.desc,
+                new TokenHourData_filter() {
+                    {
+                        setId(tokenAddress.toLowerCase());
+                    }
+                });
+
+        if (tokenHourData.isEmpty()){
+            return null;
+        }
+        Amount amount = new Amount() {
+            {
+                setId(getAmountIdEncoded(tokenHourData.get(0).getPriceUSD().doubleValue(), tokenMarket.getToken().getSymbol()));
+                setCurrency(Currency.USD);
+            }
+        };
+        if (highLow == HighLow.HIGH) {
+            BigDecimal max = tokenHourData.stream().map(TokenHourData::getPriceUSD).max(BigDecimal::compareTo).get();
+            amount.setValue(max.doubleValue());
+        } else {
+            BigDecimal min = tokenHourData.stream().map(TokenHourData::getPriceUSD).min(BigDecimal::compareTo).get();
+            amount.setValue(min.doubleValue());
+        }
+        return amount;
+    }
+
+    private Amount getWeekPriceHighLow(TokenMarket tokenMarket, String tokenAddress, HighLow highLow) {
+        List<TokenHourData> tokenHourData = tokenHourDataSubgraphFetcher.tokenHourDatas(0, 24 * 7,
+                TokenHourData_orderBy.periodStartUnix,
+                OrderDirection.desc,
+                new TokenHourData_filter() {
+                    {
+                        setId(tokenAddress.toLowerCase());
+                    }
+                });
+
+        if (tokenHourData.isEmpty()){
+            return null;
+        }
+        Amount amount = new Amount() {
+            {
+                setId(getAmountIdEncoded(tokenHourData.get(0).getPriceUSD().doubleValue(), tokenMarket.getToken().getSymbol()));
+                setCurrency(Currency.USD);
+            }
+        };
+        if (highLow == HighLow.HIGH) {
+            BigDecimal max = tokenHourData.stream().map(TokenHourData::getPriceUSD).max(BigDecimal::compareTo).get();
+            amount.setValue(max.doubleValue());
+        } else {
+            BigDecimal min = tokenHourData.stream().map(TokenHourData::getPriceUSD).min(BigDecimal::compareTo).get();
+            amount.setValue(min.doubleValue());
+        }
+        return amount;
+    }
+
+    private Amount getMonthPriceHighLow(TokenMarket tokenMarket, String tokenAddress, HighLow highLow) {
+        List<TokenDayData> tokenDayData = tokenDayDataSubgraphFetcher.tokenDayDatas(0, 30,
+                TokenDayData_orderBy.date,
+                OrderDirection.desc,
+                new TokenDayData_filter() {
+                    {
+                        setId(tokenAddress.toLowerCase());
+                    }
+                });
+
+        if (tokenDayData.isEmpty()){
+            return null;
+        }
+        Amount amount = new Amount() {
+            {
+                setId(getAmountIdEncoded(tokenDayData.get(0).getPriceUSD().doubleValue(), tokenMarket.getToken().getSymbol()));
+                setCurrency(Currency.USD);
+            }
+        };
+        if (highLow == HighLow.HIGH) {
+            BigDecimal max = tokenDayData.stream().map(TokenDayData::getPriceUSD).max(BigDecimal::compareTo).get();
+            amount.setValue(max.doubleValue());
+        } else {
+            BigDecimal min = tokenDayData.stream().map(TokenDayData::getPriceUSD).min(BigDecimal::compareTo).get();
+            amount.setValue(min.doubleValue());
+        }
+        return amount;
+    }
+
+    private Amount getYearPriceHighLow(TokenMarket tokenMarket, String tokenAddress, HighLow highLow) {
+        List<TokenDayData> tokenDayData = tokenDayDataSubgraphFetcher.tokenDayDatas(0, 365,
+                TokenDayData_orderBy.date,
+                OrderDirection.desc,
+                new TokenDayData_filter() {
+                    {
+                        setId(tokenAddress.toLowerCase());
+                    }
+                });
+
+        if (tokenDayData.isEmpty()){
+            return null;
+        }
+        Amount amount = new Amount() {
+            {
+                setId(getAmountIdEncoded(tokenDayData.get(0).getPriceUSD().doubleValue(), tokenMarket.getToken().getSymbol()));
+                setCurrency(Currency.USD);
+            }
+        };
+        if (highLow == HighLow.HIGH) {
+            BigDecimal max = tokenDayData.stream().map(TokenDayData::getPriceUSD).max(BigDecimal::compareTo).get();
+            amount.setValue(max.doubleValue());
+        } else {
+            BigDecimal min = tokenDayData.stream().map(TokenDayData::getPriceUSD).min(BigDecimal::compareTo).get();
+            amount.setValue(min.doubleValue());
+        }
+        return amount;
+    }
+
+    private Amount getHourPriceHighLow(TokenMarket tokenMarket, String tokenAddress, HighLow highLow) {
+        List<TokenMinuteData> tokenHourData = tokenMinuteDataSubgraphFetcher.tokenMinuteDatas(0, 60,
+                TokenMinuteData_orderBy.periodStartUnix,
+                OrderDirection.desc,
+                new TokenMinuteData_filter() {
+                    {
+                        setId(tokenAddress.toLowerCase());
+                    }
+                });
+
+        if (tokenHourData.isEmpty()){
+            return null;
+        }
+        Amount amount = new Amount() {
+            {
+                setId(getAmountIdEncoded(tokenHourData.get(0).getPriceUSD().doubleValue(), tokenMarket.getToken().getSymbol()));
+                setCurrency(Currency.USD);
+            }
+        };
+        if (highLow == HighLow.HIGH) {
+            BigDecimal max = tokenHourData.stream().map(TokenMinuteData::getPriceUSD).max(BigDecimal::compareTo).get();
+            amount.setValue(max.doubleValue());
+        } else {
+            BigDecimal min = tokenHourData.stream().map(TokenMinuteData::getPriceUSD).min(BigDecimal::compareTo).get();
+            amount.setValue(min.doubleValue());
+        }
+        return amount;
+    }
+
+
 
     public Amount getVolume(TokenMarket tokenMarket, HistoryDuration duration){
         Token token = tokenMarket.getToken();

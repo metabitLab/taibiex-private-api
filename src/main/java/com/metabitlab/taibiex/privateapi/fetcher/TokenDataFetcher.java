@@ -3,6 +3,7 @@ package com.metabitlab.taibiex.privateapi.fetcher;
 import java.util.List;
 import java.util.function.Function;
 
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Encoder;
 
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenSortableField;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenStandard;
 import com.metabitlab.taibiex.privateapi.service.TokenService;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenMarketSubgraphFetcher;
@@ -20,17 +19,6 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.FeeData;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.HistoryDuration;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedAmount;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedOhlc;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenMarket;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenProject;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenProjectMarket;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsData;
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
@@ -115,6 +103,15 @@ public class TokenDataFetcher {
         TokenMarket tokenMarket = env.getSource();
 
         return tokenMarketService.getPricePercentChange(tokenMarket, duration);
+    }
+
+    @DgsData(parentType = "TokenMarket")
+    public Amount priceHighLow(@InputArgument HistoryDuration duration,
+                               @InputArgument HighLow highLow,
+                               DgsDataFetchingEnvironment env) {
+        TokenMarket tokenMarket = env.getSource();
+
+        return tokenMarketService.getPriceHighLow(tokenMarket, duration, highLow);
     }
 
     @DgsData(parentType = "TokenMarket", field = "volume")
