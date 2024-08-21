@@ -16,6 +16,7 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PoolTransactio
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PoolTransactionType;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.ProtocolVersion;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
+import com.metabitlab.taibiex.privateapi.service.TokenService;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.TransactionProjectionRoot;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.TransactionsGraphQLQuery;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Burn_orderBy;
@@ -30,6 +31,9 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 public class TransactionsSubgraphFetcher {
     @Autowired
     SubgraphsClient subgraphsClient;
+
+    @Autowired
+    TokenService tokenService;
 
     public List<PoolTransaction> mintsTransactions(Integer skip, Integer first, Integer cursor, Chain chain) {
         TransactionsGraphQLQuery query = TransactionsGraphQLQuery.newRequest()
@@ -73,10 +77,13 @@ public class TransactionsSubgraphFetcher {
                 String transactionId = encoder.encodeToString(
                         ("PoolTransaction:" + chain + "_" + item.getId() + "_" + PoolTransactionType.ADD + "_"
                                 + mint.getToken0().getId() + "_" + mint.getToken1().getId()).getBytes());
-                
+
                 double usdValue = mint.getAmountUSD().doubleValue();
                 String usdValueId = encoder.encodeToString(
                         ("Amount:" + usdValue + "_" + Currency.USD).getBytes());
+
+                Token token0 = tokenService.token(chain, mint.getToken0().getId());
+                Token token1 = tokenService.token(chain, mint.getToken1().getId());
 
                 PoolTransaction transaction = new PoolTransaction();
                 transaction.setId(transactionId);
@@ -97,9 +104,8 @@ public class TransactionsSubgraphFetcher {
                     {
                         setId(mint.getToken0().getId());
                         setChain(chain);
-                        // TODO: 以下两个字段需从数据库读取
-                        // setAddress(mint.getToken0().);
-                        // setStandard(TokenStandard.ERC20);
+                        setAddress(mint.getToken0().getId());
+                        setStandard(token0.getStandard());
                         setDecimals(mint.getToken0().getDecimals().intValue());
                         setName(mint.getToken0().getName());
                         setSymbol(mint.getToken0().getSymbol());
@@ -110,16 +116,15 @@ public class TransactionsSubgraphFetcher {
                     {
                         setId(mint.getToken1().getId());
                         setChain(chain);
-                        // TODO: 以下两个字段需从数据库读取
-                        // setAddress(mint.getToken0().);
-                        // setStandard(TokenStandard.ERC20);
+                        setAddress(mint.getToken0().getId());
+                        setStandard(token1.getStandard());
                         setDecimals(mint.getToken1().getDecimals().intValue());
                         setName(mint.getToken1().getName());
                         setSymbol(mint.getToken1().getSymbol());
                     }
                 });
                 transaction.setToken1Quantity(mint.getAmount1().toString());
-                
+
                 return transaction;
             });
         }).toList();
@@ -172,6 +177,9 @@ public class TransactionsSubgraphFetcher {
                 String usdValueId = encoder.encodeToString(
                         ("Amount:" + usdValue + "_" + Currency.USD).getBytes());
 
+                Token token0 = tokenService.token(chain, burn.getToken0().getId());
+                Token token1 = tokenService.token(chain, burn.getToken1().getId());
+
                 PoolTransaction transaction = new PoolTransaction();
                 transaction.setId(transactionId);
                 transaction.setChain(chain);
@@ -191,9 +199,8 @@ public class TransactionsSubgraphFetcher {
                     {
                         setId(burn.getToken0().getId());
                         setChain(chain);
-                        // TODO: 以下两个字段需从数据库读取
-                        // setAddress(mint.getToken0().);
-                        // setStandard(TokenStandard.ERC20);
+                        setAddress(burn.getToken0().getId());
+                        setStandard(token0.getStandard());
                         setDecimals(burn.getToken0().getDecimals().intValue());
                         setName(burn.getToken0().getName());
                         setSymbol(burn.getToken0().getSymbol());
@@ -204,9 +211,8 @@ public class TransactionsSubgraphFetcher {
                     {
                         setId(burn.getToken1().getId());
                         setChain(chain);
-                        // TODO: 以下两个字段需从数据库读取
-                        // setAddress(mint.getToken0().);
-                        // setStandard(TokenStandard.ERC20);
+                        setAddress(burn.getToken0().getId());
+                        setStandard(token1.getStandard());
                         setDecimals(burn.getToken1().getDecimals().intValue());
                         setName(burn.getToken1().getName());
                         setSymbol(burn.getToken1().getSymbol());
@@ -266,6 +272,9 @@ public class TransactionsSubgraphFetcher {
                 String usdValueId = encoder.encodeToString(
                         ("Amount:" + usdValue + "_" + Currency.USD).getBytes());
 
+                Token token0 = tokenService.token(chain, swap.getToken0().getId());
+                Token token1 = tokenService.token(chain, swap.getToken1().getId());
+
                 PoolTransaction transaction = new PoolTransaction();
                 transaction.setId(transactionId);
                 transaction.setChain(chain);
@@ -285,9 +294,8 @@ public class TransactionsSubgraphFetcher {
                     {
                         setId(swap.getToken0().getId());
                         setChain(chain);
-                        // TODO: 以下两个字段需从数据库读取
-                        // setAddress(mint.getToken0().);
-                        // setStandard(TokenStandard.ERC20);
+                        setAddress(swap.getToken0().getId());
+                        setStandard(token0.getStandard());
                         setDecimals(swap.getToken0().getDecimals().intValue());
                         setName(swap.getToken0().getName());
                         setSymbol(swap.getToken0().getSymbol());
@@ -298,9 +306,8 @@ public class TransactionsSubgraphFetcher {
                     {
                         setId(swap.getToken1().getId());
                         setChain(chain);
-                        // TODO: 以下两个字段需从数据库读取
-                        // setAddress(mint.getToken0().);
-                        // setStandard(TokenStandard.ERC20);
+                        setAddress(swap.getToken0().getId());
+                        setStandard(token1.getStandard());
                         setDecimals(swap.getToken1().getDecimals().intValue());
                         setName(swap.getToken1().getName());
                         setSymbol(swap.getToken1().getSymbol());
