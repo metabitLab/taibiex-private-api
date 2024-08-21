@@ -56,6 +56,36 @@ public class CustomExceptionHandler implements DataFetcherExceptionHandler {
       return CompletableFuture.completedFuture(result);
     }
 
+    if (exception instanceof MissVariableException) {
+      debugInfo.put("Variable", ((MissVariableException)exception).getVariable());
+
+      TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
+              .message("privateapi exception: " + exception.getMessage())
+              .debugInfo(debugInfo)
+              .path(handlerParameters.getPath()).build();
+
+      DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
+              .error(graphqlError)
+              .build();
+
+      return CompletableFuture.completedFuture(result);
+    }
+
+    if (exception instanceof UnKnownTokenException) {
+      debugInfo.put("Token", ((UnKnownTokenException)exception).getToken());
+
+      TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
+              .message("privateapi exception: " + exception.getMessage())
+              .debugInfo(debugInfo)
+              .path(handlerParameters.getPath()).build();
+
+      DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
+              .error(graphqlError)
+              .build();
+
+      return CompletableFuture.completedFuture(result);
+    }
+
     return defaultHandler.handleException(handlerParameters);
   }
 }
