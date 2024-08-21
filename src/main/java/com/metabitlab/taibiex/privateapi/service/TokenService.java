@@ -54,8 +54,20 @@ public class TokenService {
             }*/
             tokenList.add(token);
         }
-
         return tokenList;
+    }
 
-  }
+    public Token token(Chain chain, String address) {
+        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token subGraphToken = tokenSubgraphFetcher
+                .token(address);
+        if (subGraphToken == null) {
+            return null;
+        }
+        Token token = CGlibMapper.mapper(subGraphToken, Token.class);
+        token.setAddress(subGraphToken.getId());
+        token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
+        token.setChain(Chain.TABI);
+        token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
+        return token;
+    }
 }
