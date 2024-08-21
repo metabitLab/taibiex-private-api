@@ -2,6 +2,8 @@ package com.metabitlab.taibiex.privateapi.subgraphfetcher;
 
 import java.util.List;
 
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolGraphQLQuery;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolProjectionRoot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,5 +38,78 @@ public class PoolsSubgraphFetcher {
       List<Pool> pools = response.extractValueAsObject("pools", new TypeRef<List<Pool>>() {});
 
       return pools;
+    }
+
+    public Pool pool(String id) {
+        PoolGraphQLQuery poolsQuery = PoolGraphQLQuery.newRequest()
+                .id(id)
+                .build();
+
+        PoolProjectionRoot<?, ?> poolProjection = new PoolProjectionRoot<>()
+                .id()
+                .createdAtTimestamp()
+                .createdAtBlockNumber()
+                .token0Price()
+                .token1Price()
+                .liquidity()
+                .sqrtPrice()
+                .feeTier()
+                .tick()
+                .liquidityProviderCount()
+                .collectedFeesToken0()
+                .collectedFeesToken1()
+                .collectedFeesUSD()
+                .observationIndex()
+                .volumeToken0()
+                .volumeToken1()
+                .volumeUSD()
+                .untrackedVolumeUSD()
+                .txCount()
+                .totalValueLockedToken0()
+                .totalValueLockedToken1()
+                .totalValueLockedETH()
+                .totalValueLockedUSD()
+                .totalValueLockedUSDUntracked()
+                .feesUSD();
+
+        poolProjection.token0()
+                .id()
+                .symbol()
+                .name()
+                .decimals()
+                .totalSupply()
+                .untrackedVolumeUSD()
+                .txCount()
+                .totalValueLocked()
+                .totalValueLockedUSD()
+                .totalValueLockedUSDUntracked()
+                .derivedETH()
+                .poolCount()
+                .volumeUSD()
+                .totalValueLocked()
+                .totalValueLockedUSD();
+
+        poolProjection.token1()
+                .id()
+                .symbol()
+                .name()
+                .decimals()
+                .totalSupply()
+                .untrackedVolumeUSD()
+                .txCount()
+                .totalValueLocked()
+                .totalValueLockedUSD()
+                .totalValueLockedUSDUntracked()
+                .derivedETH()
+                .poolCount()
+                .volumeUSD()
+                .totalValueLocked()
+               .totalValueLockedUSD();
+
+
+        GraphQLQueryRequest request = new GraphQLQueryRequest(poolsQuery, poolProjection);
+        GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
+
+        return response.extractValueAsObject("pool", Pool.class);
     }
 }
