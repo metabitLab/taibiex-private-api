@@ -221,8 +221,32 @@ public class TokenDataFetcher {
     }
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME, field = DgsConstants.TOKENPROJECTMARKET.MarketCap)
-    public Amount marketCap() {
-        return null;
+    public Amount marketCap(DgsDataFetchingEnvironment env) {
+        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = env.getLocalContext();
+        if (token == null) {
+            throw new MissLocalContextException("Token is required", "token");
+        }
+
+        Bundle bundle = bundleSubgraphFetcher.bundle();
+
+        // TODO: 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
+
+        BigDecimal price = token.getDerivedETH().multiply(bundle.getEthPriceUSD());
+        BigInteger totalSupply = token.getTotalSupply();
+
+        double marketCap = totalSupply.intValue() * price.doubleValue();
+
+        Encoder encoder = Base64.getEncoder();
+        String amountId = encoder.encodeToString(
+                ("Amount:" + marketCap + "_" + Currency.USD).getBytes());
+
+        return new Amount() {
+            {
+                setId(amountId);
+                setValue(marketCap);
+                setCurrency(Currency.USD);
+            }
+        };
     }
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME, field = DgsConstants.TOKENPROJECTMARKET.FullyDilutedValuation)
