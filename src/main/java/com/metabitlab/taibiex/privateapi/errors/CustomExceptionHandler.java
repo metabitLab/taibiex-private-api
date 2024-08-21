@@ -86,6 +86,21 @@ public class CustomExceptionHandler implements DataFetcherExceptionHandler {
       return CompletableFuture.completedFuture(result);
     }
 
+    if (exception instanceof MissLocalContextException) {
+      debugInfo.put("Local Context", ((MissLocalContextException)exception).getContextDescription());
+
+      TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
+              .message("privateapi exception: " + exception.getMessage())
+              .debugInfo(debugInfo)
+              .path(handlerParameters.getPath()).build();
+
+      DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
+              .error(graphqlError)
+              .build();
+
+      return CompletableFuture.completedFuture(result);
+    }
+
     return defaultHandler.handleException(handlerParameters);
   }
 }

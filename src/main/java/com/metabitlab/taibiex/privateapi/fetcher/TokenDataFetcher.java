@@ -9,6 +9,8 @@ import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Encoder;
@@ -19,6 +21,7 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenMarketSubgraphFetc
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
+import com.metabitlab.taibiex.privateapi.errors.MissLocalContextException;
 import com.metabitlab.taibiex.privateapi.errors.MissVariableException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
@@ -106,12 +109,9 @@ public class TokenDataFetcher {
 
     @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.V3Transactions)
     public List<PoolTransaction> v3Transactions(@InputArgument Integer first,
-            @InputArgument("timestampCursor") Integer cursor,
-            DgsDataFetchingEnvironment env) {
+            @InputArgument("timestampCursor") Integer cursor) {
         // TODO: 目前仅支持单链 TABI
         final Chain TABI = Chain.TABI;
-
-        // com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = env.getLocalContext();
 
         List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, TABI);
         List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, TABI);
@@ -166,12 +166,17 @@ public class TokenDataFetcher {
             throw new MissVariableException("chain is required", chainKey);
         }
 
+        TokenProject project = env.getSource();
+
         Chain chain = Chain.valueOf((String) env.getVariables().get(chainKey));
 
         // 原生代币地址为null，所以address允许为null
         String address = env.getArgument("address");
 
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = env.getLocalContext();
+        if (token == null) {
+            throw new MissLocalContextException("Token is required", "token");
+        }
 
         Encoder encoder = Base64.getEncoder();
 
@@ -183,9 +188,10 @@ public class TokenDataFetcher {
         String projectMarketId = encoder.encodeToString(
                 ("TokenProjectMarket:" + projectId + "_" + Currency.USD).getBytes());
 
-        TokenProjectMarket onlyMarket = new TokenProjectMarket() {
+        TokenProjectMarket onlyOneMarket = new TokenProjectMarket() {
             {
                 setId(projectMarketId);
+                setTokenProject(project);
                 setCurrency(Currency.USD);
                 setPrice(new Amount() {
                     {
@@ -204,14 +210,46 @@ public class TokenDataFetcher {
             }
         };
 
-        return Arrays.asList(onlyMarket);
+        return Arrays.asList(onlyOneMarket);
     }
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME, field = DgsConstants.TOKENPROJECTMARKET.TokenProject)
     public TokenProject tokenProject(DgsDataFetchingEnvironment env) {
-        Token token = env.getSource();
+        TokenProjectMarket projectMarket = env.getSource();
 
-        return tokenProjectService.findByAddress(token);
+        return projectMarket.getTokenProject();
+    }
+
+    @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME, field = DgsConstants.TOKENPROJECTMARKET.MarketCap)
+    public Amount marketCap() {
+        return null;
+    }
+
+    @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME, field = DgsConstants.TOKENPROJECTMARKET.FullyDilutedValuation)
+    public Amount fullyDilutedValuation(DgsDataFetchingEnvironment env) {
+        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = env.getLocalContext();
+        if (token == null) {
+            throw new MissLocalContextException("Token is required", "token");
+        }
+
+        Bundle bundle = bundleSubgraphFetcher.bundle();
+
+        BigDecimal price = token.getDerivedETH().multiply(bundle.getEthPriceUSD());
+        BigInteger totalSupply = token.getTotalSupply();
+
+        double fullyDilutedValuation = totalSupply.intValue() * price.doubleValue();
+
+        Encoder encoder = Base64.getEncoder();
+        String amountId = encoder.encodeToString(
+                ("Amount:" + fullyDilutedValuation + "_" + Currency.USD).getBytes());
+
+        return new Amount() {
+            {
+                setId(amountId);
+                setValue(fullyDilutedValuation);
+                setCurrency(Currency.USD);
+            }
+        };
     }
 
     private <T> List<TimestampedOhlc> fetchOhlc(HistoryDuration duration,
@@ -228,18 +266,13 @@ public class TokenDataFetcher {
                 .toList();
     }
 
-    public Amount marketCap() {
-        return null;
-    }
-
-    public Amount fullyDilutedValuation() {
-        return null;
-    }
-
     @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.Ohlc)
     public List<TimestampedOhlc> ohlc(@InputArgument HistoryDuration duration,
             DgsDataFetchingEnvironment env) {
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = env.getLocalContext();
+        if (t == null) {
+            throw new MissLocalContextException("Token is required", "token");
+        }
 
         Encoder encoder = Base64.getEncoder();
 
@@ -540,6 +573,9 @@ public class TokenDataFetcher {
     public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration,
             DgsDataFetchingEnvironment env) {
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = env.getLocalContext();
+        if (t == null) {
+            throw new MissLocalContextException("Token is required", "token");
+        }
 
         Encoder encoder = Base64.getEncoder();
 
