@@ -80,6 +80,8 @@ public class HistoricalProtocolVolumeService {
             if (total == null) {
                 total = 0.0;
             }
+
+            // TODO: 汇总逻辑: 累积求和
             map.put(key, total + item.getTvlUSD().doubleValue());
         }
 
