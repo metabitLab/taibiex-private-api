@@ -16,6 +16,11 @@ import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.UniswapDa
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 
+/**
+ * This class fetches Uniswap day data from the subgraph.
+ * 
+ * @author: nix
+ */
 @Service
 public class UniswapDayDataSubgraphFetcher {
     @Autowired
@@ -37,7 +42,7 @@ public class UniswapDayDataSubgraphFetcher {
                 .queryName("UniswapDayDataSubgraphFetcher_uniswapDayDatas")
                 .build();
 
-        UniswapDayDatasProjectionRoot projection = new UniswapDayDatasProjectionRoot()
+        UniswapDayDatasProjectionRoot<?, ?> projection = new UniswapDayDatasProjectionRoot<>()
                 .id()
                 .date()
                 .volumeETH()
