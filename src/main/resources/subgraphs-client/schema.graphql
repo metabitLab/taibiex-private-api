@@ -3552,6 +3552,22 @@ type Query {
     subgraphError: _SubgraphErrorPolicy_! = deny
   ): [TokenMinuteData!]!
 
+  poolMinuteData(
+    id: ID!
+    block: Block_height
+    subgraphError: _SubgraphErrorPolicy_! = deny
+  ): PoolMinuteData
+
+  poolMinuteDatas(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: PoolMinuteData_orderBy
+    orderDirection: OrderDirection
+    where: PoolMinuteData_filter
+    block: Block_height
+    subgraphError: _SubgraphErrorPolicy_! = deny
+  ): [PoolMinuteData!]!
+
   """Access to subgraph metadata"""
   _meta(block: Block_height): _Meta_
 }
@@ -6100,6 +6116,238 @@ enum TokenMinuteData_orderBy {
   high
   low
   close
+}
+
+type PoolMinuteData {
+  id: ID!
+  periodStartUnix: Int!
+  pool: Pool!
+  liquidity: BigInt!
+  sqrtPrice: BigInt!
+  token0Price: BigDecimal!
+  token1Price: BigDecimal!
+  tick: BigInt
+  tvlUSD: BigDecimal!
+  volumeToken0: BigDecimal!
+  volumeToken1: BigDecimal!
+  volumeUSD: BigDecimal!
+  feesUSD: BigDecimal!
+  txCount: BigInt!
+  open: BigDecimal!
+  high: BigDecimal!
+  low: BigDecimal!
+  close: BigDecimal!
+}
+
+input PoolMinuteData_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  periodStartUnix: Int
+  periodStartUnix_not: Int
+  periodStartUnix_gt: Int
+  periodStartUnix_lt: Int
+  periodStartUnix_gte: Int
+  periodStartUnix_lte: Int
+  periodStartUnix_in: [Int!]
+  periodStartUnix_not_in: [Int!]
+  pool: String
+  pool_not: String
+  pool_gt: String
+  pool_lt: String
+  pool_gte: String
+  pool_lte: String
+  pool_in: [String!]
+  pool_not_in: [String!]
+  pool_contains: String
+  pool_contains_nocase: String
+  pool_not_contains: String
+  pool_not_contains_nocase: String
+  pool_starts_with: String
+  pool_starts_with_nocase: String
+  pool_not_starts_with: String
+  pool_not_starts_with_nocase: String
+  pool_ends_with: String
+  pool_ends_with_nocase: String
+  pool_not_ends_with: String
+  pool_not_ends_with_nocase: String
+  pool_: Pool_filter
+  liquidity: BigInt
+  liquidity_not: BigInt
+  liquidity_gt: BigInt
+  liquidity_lt: BigInt
+  liquidity_gte: BigInt
+  liquidity_lte: BigInt
+  liquidity_in: [BigInt!]
+  liquidity_not_in: [BigInt!]
+  sqrtPrice: BigInt
+  sqrtPrice_not: BigInt
+  sqrtPrice_gt: BigInt
+  sqrtPrice_lt: BigInt
+  sqrtPrice_gte: BigInt
+  sqrtPrice_lte: BigInt
+  sqrtPrice_in: [BigInt!]
+  sqrtPrice_not_in: [BigInt!]
+  token0Price: BigDecimal
+  token0Price_not: BigDecimal
+  token0Price_gt: BigDecimal
+  token0Price_lt: BigDecimal
+  token0Price_gte: BigDecimal
+  token0Price_lte: BigDecimal
+  token0Price_in: [BigDecimal!]
+  token0Price_not_in: [BigDecimal!]
+  token1Price: BigDecimal
+  token1Price_not: BigDecimal
+  token1Price_gt: BigDecimal
+  token1Price_lt: BigDecimal
+  token1Price_gte: BigDecimal
+  token1Price_lte: BigDecimal
+  token1Price_in: [BigDecimal!]
+  token1Price_not_in: [BigDecimal!]
+  tick: BigInt
+  tick_not: BigInt
+  tick_gt: BigInt
+  tick_lt: BigInt
+  tick_gte: BigInt
+  tick_lte: BigInt
+  tick_in: [BigInt!]
+  tick_not_in: [BigInt!]
+  tvlUSD: BigDecimal
+  tvlUSD_not: BigDecimal
+  tvlUSD_gt: BigDecimal
+  tvlUSD_lt: BigDecimal
+  tvlUSD_gte: BigDecimal
+  tvlUSD_lte: BigDecimal
+  tvlUSD_in: [BigDecimal!]
+  tvlUSD_not_in: [BigDecimal!]
+  volumeToken0: BigDecimal
+  volumeToken0_not: BigDecimal
+  volumeToken0_gt: BigDecimal
+  volumeToken0_lt: BigDecimal
+  volumeToken0_gte: BigDecimal
+  volumeToken0_lte: BigDecimal
+  volumeToken0_in: [BigDecimal!]
+  volumeToken0_not_in: [BigDecimal!]
+  volumeToken1: BigDecimal
+  volumeToken1_not: BigDecimal
+  volumeToken1_gt: BigDecimal
+  volumeToken1_lt: BigDecimal
+  volumeToken1_gte: BigDecimal
+  volumeToken1_lte: BigDecimal
+  volumeToken1_in: [BigDecimal!]
+  volumeToken1_not_in: [BigDecimal!]
+  volumeUSD: BigDecimal
+  volumeUSD_not: BigDecimal
+  volumeUSD_gt: BigDecimal
+  volumeUSD_lt: BigDecimal
+  volumeUSD_gte: BigDecimal
+  volumeUSD_lte: BigDecimal
+  volumeUSD_in: [BigDecimal!]
+  volumeUSD_not_in: [BigDecimal!]
+  feesUSD: BigDecimal
+  feesUSD_not: BigDecimal
+  feesUSD_gt: BigDecimal
+  feesUSD_lt: BigDecimal
+  feesUSD_gte: BigDecimal
+  feesUSD_lte: BigDecimal
+  feesUSD_in: [BigDecimal!]
+  feesUSD_not_in: [BigDecimal!]
+  txCount: BigInt
+  txCount_not: BigInt
+  txCount_gt: BigInt
+  txCount_lt: BigInt
+  txCount_gte: BigInt
+  txCount_lte: BigInt
+  txCount_in: [BigInt!]
+  txCount_not_in: [BigInt!]
+  open: BigDecimal
+  open_not: BigDecimal
+  open_gt: BigDecimal
+  open_lt: BigDecimal
+  open_gte: BigDecimal
+  open_lte: BigDecimal
+  open_in: [BigDecimal!]
+  open_not_in: [BigDecimal!]
+  high: BigDecimal
+  high_not: BigDecimal
+  high_gt: BigDecimal
+  high_lt: BigDecimal
+  high_gte: BigDecimal
+  high_lte: BigDecimal
+  high_in: [BigDecimal!]
+  high_not_in: [BigDecimal!]
+  low: BigDecimal
+  low_not: BigDecimal
+  low_gt: BigDecimal
+  low_lt: BigDecimal
+  low_gte: BigDecimal
+  low_lte: BigDecimal
+  low_in: [BigDecimal!]
+  low_not_in: [BigDecimal!]
+  close: BigDecimal
+  close_not: BigDecimal
+  close_gt: BigDecimal
+  close_lt: BigDecimal
+  close_gte: BigDecimal
+  close_lte: BigDecimal
+  close_in: [BigDecimal!]
+  close_not_in: [BigDecimal!]
+  _change_block: BlockChangedFilter
+  """Filter for the block changed event."""
+
+  and: [PoolMinuteData_filter]
+  or: [PoolMinuteData_filter]
+}
+
+enum PoolMinuteData_orderBy {
+  id
+  periodStartUnix
+  pool
+  pool__id
+  pool__createdAtTimestamp
+  pool__createdAtBlockNumber
+  pool__feeTier
+  pool__liquidity
+  pool__sqrtPrice
+  pool__token0Price
+  pool__token1Price
+  pool__tick
+  pool__observationIndex
+  pool__volumeToken0
+  pool__volumeToken1
+  pool__volumeUSD
+  pool__untrackedVolumeUSD
+  pool__feesUSD
+  pool__txCount
+  pool__collectedFeesToken0
+  pool__collectedFeesToken1
+  pool__collectedFeesUSD
+  pool__totalValueLockedToken0
+  pool__totalValueLockedToken1
+  pool__totalValueLockedETH
+  pool__totalValueLockedUSD
+  pool__totalValueLockedUSDUntracked
+  pool__liquidityProviderCount
+  liquidity
+  sqrtPrice
+  token0Price
+  token1Price
+  tick
+  tvlUSD
+  volumeToken0
+  volumeToken1
+  volumeUSD
+  feesUSD
+  txCount
+  open
+  high
+  low
+  close 
 }
 
 type Transaction {
