@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -21,6 +20,10 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedAmo
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.UniswapDayDataSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.UniswapDayData;
 
+/**
+ * This class provides historical protocol volume service.
+ * @author Nix
+ */
 @Service
 public class HistoricalProtocolVolumeService {
     @Autowired
