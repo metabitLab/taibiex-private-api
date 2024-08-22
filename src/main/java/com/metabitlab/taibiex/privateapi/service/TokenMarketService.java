@@ -125,7 +125,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenMinuteData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -154,7 +154,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenHourData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -183,7 +183,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenHourData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -212,7 +212,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenDayData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -241,7 +241,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenDayData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -270,7 +270,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenMinuteData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -314,7 +314,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenHourData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -334,7 +334,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenMinuteData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -354,7 +354,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenDayData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -398,7 +398,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenMinuteData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -425,7 +425,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenHourData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
 
@@ -452,7 +452,7 @@ public class TokenMarketService {
                 OrderDirection.desc,
                 new TokenDayData_filter() {
                     {
-                        setId(tokenAddress.toLowerCase());
+                        setToken(tokenAddress.toLowerCase());
                     }
                 });
         if (tokenDayDatas.size() < 2){
