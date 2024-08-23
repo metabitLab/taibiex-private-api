@@ -6,8 +6,10 @@ import com.metabitlab.taibiex.privateapi.mapper.CGlibMapper;
 import com.metabitlab.taibiex.privateapi.repository.TokenProjectRepository;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.util.*;
 
@@ -52,6 +54,27 @@ public class TokenService {
                 tokenProject.setLogo(logo);
                 token.setProject(tokenProject);
             }*/
+            tokenList.add(token);
+        }
+        return tokenList;
+    }
+
+    public List<Token> tokens(List<ContractInput> contractInputs) {
+
+        List<com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> subGraphTokens =
+                tokenSubgraphFetcher.tokens(null, null, null, null,
+                        ObjectUtils.isEmpty(contractInputs)?null:
+                        new Token_filter(){{
+                            setId_in(contractInputs.stream().map(ContractInput::getAddress).map(String::toLowerCase).toList());
+                        }});
+
+        List<Token> tokenList = new ArrayList<>();
+        for (com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token subGraphToken : subGraphTokens) {
+            Token token = CGlibMapper.mapper(subGraphToken, Token.class);
+            token.setAddress(subGraphToken.getId());
+            token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
+            token.setChain(Chain.TABI);
+            token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
             tokenList.add(token);
         }
         return tokenList;

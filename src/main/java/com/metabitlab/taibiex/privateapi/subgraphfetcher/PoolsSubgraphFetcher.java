@@ -4,6 +4,9 @@ import java.util.List;
 
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolGraphQLQuery;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.client.PoolProjectionRoot;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Pool_filter;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Pool_orderBy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +24,7 @@ public class PoolsSubgraphFetcher {
     @Autowired
     SubgraphsClient subgraphsClient;
   
-    public List<Pool> pools(int skip, int first) {
+    public List<Pool> pools(int skip, int first, Pool_orderBy orderBy, OrderDirection orderDirection, Pool_filter where) {
       PoolsGraphQLQuery poolsQuery = PoolsGraphQLQuery.newRequest()
         .skip(skip)
         .first(first)

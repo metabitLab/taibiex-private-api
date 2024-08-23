@@ -7,6 +7,9 @@ import java.util.stream.Stream;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
@@ -83,6 +86,7 @@ public class TokenDataFetcher {
                 setStandard(TokenStandard.ERC20);
                 setName(token.getName());
                 setSymbol(token.getSymbol());
+                setDecimals(token.getDecimals().intValue());
                 // TODO: 以下字段需要填值
                 setFeeData(null);
                 // TODO: 不支持 V2Transactions
@@ -732,5 +736,10 @@ public class TokenDataFetcher {
             @InputArgument TokenSortableField orderBy) {
         return tokenService.topTokens(chain, page, pageSize, orderBy);
     }
+
+    /*@DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
+    public List<Token> tokens(@InputArgument List<ContractInput> contractInput) {
+        return tokenService.tokens(contractInput);
+    }*/
 
 }
