@@ -38,3 +38,6 @@ logs
 ### MySQL ###
 mysql-data/
 mysql.conf.d/
+
+### Server ###
+*.pem
