@@ -7,6 +7,9 @@ import java.util.stream.Stream;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
@@ -732,5 +735,10 @@ public class TokenDataFetcher {
             @InputArgument TokenSortableField orderBy) {
         return tokenService.topTokens(chain, page, pageSize, orderBy);
     }
+
+    /*@DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
+    public List<Token> tokens(@InputArgument List<ContractInput> contractInput) {
+        return tokenService.tokens(contractInput);
+    }*/
 
 }

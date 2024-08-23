@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
@@ -433,16 +434,26 @@ public class TokenMarketService {
             return null;
         }
 
-        BigDecimal change = new BigDecimal(String.valueOf(tokenHourData.get(0).getPriceUSD()))
-                .subtract(new BigDecimal(String.valueOf(tokenHourData.get(1).getPriceUSD())));
-        BigDecimal percentChange = change.divide(new BigDecimal(String.valueOf(tokenHourData.get(1).getPriceUSD())));
-        return new Amount() {
-            {
-                setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
-                setCurrency(Currency.USD);
-                setValue(percentChange.doubleValue());
-            }
-        };
+        BigDecimal priceCurrent = new BigDecimal(String.valueOf(tokenHourData.get(0).getPriceUSD()));
+        BigDecimal pricePrevious = new BigDecimal(String.valueOf(tokenHourData.get(1).getPriceUSD()));
+
+        // 检查除数是否为零
+        if (pricePrevious.signum() != 0) {
+            BigDecimal change = priceCurrent.subtract(pricePrevious);
+            BigDecimal percentChange = change.divide(pricePrevious, 2, RoundingMode.HALF_UP);
+
+            // 返回百分比变化
+            return new Amount() {
+                {
+                    setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
+                    setCurrency(Currency.USD);
+                    setValue(percentChange.doubleValue());
+                }
+            };
+        } else {
+            // 如果价格为零，可以返回null或者处理这种情况
+            return null;
+        }
     }
 
 
@@ -458,17 +469,26 @@ public class TokenMarketService {
         if (tokenDayDatas.size() < 2){
             return null;
         }
-        BigDecimal change = new BigDecimal(String.valueOf(tokenDayDatas.get(0).getPriceUSD()))
-                .subtract(new BigDecimal(String.valueOf(tokenDayDatas.get(1).getPriceUSD())));
-        BigDecimal percentChange = change.divide(new BigDecimal(String.valueOf(tokenDayDatas.get(1).getPriceUSD())));
+        BigDecimal priceCurrent = new BigDecimal(String.valueOf(tokenDayDatas.get(0).getPriceUSD()));
+        BigDecimal pricePrevious = new BigDecimal(String.valueOf(tokenDayDatas.get(1).getPriceUSD()));
 
-        return new Amount() {
-            {
-                setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
-                setCurrency(Currency.USD);
-                setValue(percentChange.doubleValue());
-            }
-        };
+        // 检查除数是否为零
+        if (pricePrevious.signum() != 0) {
+            BigDecimal change = priceCurrent.subtract(pricePrevious);
+            BigDecimal percentChange = change.divide(pricePrevious, 2, RoundingMode.HALF_UP);
+
+            // 返回百分比变化
+            return new Amount() {
+                {
+                    setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
+                    setCurrency(Currency.USD);
+                    setValue(percentChange.doubleValue());
+                }
+            };
+        } else {
+            // 如果价格为零，可以返回null或者处理这种情况
+            return null;
+        }
     }
 
     private Amount getWeekPricePercentChange(TokenMarket tokenMarket, String tokenAddress) {

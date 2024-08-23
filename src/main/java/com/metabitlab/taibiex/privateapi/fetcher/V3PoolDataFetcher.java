@@ -1,12 +1,11 @@
 package com.metabitlab.taibiex.privateapi.fetcher;
 
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.HistoryDuration;
-import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.V3PoolService;
 import com.netflix.graphql.dgs.*;
+
+import java.util.List;
 
 @DgsComponent
 public class V3PoolDataFetcher {
@@ -22,9 +21,35 @@ public class V3PoolDataFetcher {
         return v3PoolService.pool(chain, address);
     }
 
-    @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME, field = DgsConstants.V3POOL.CumulativeVolume)
+    @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
     public Amount cumulativeVolume(@InputArgument HistoryDuration duration, DgsDataFetchingEnvironment env) {
         com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool = env.getSource();
         return v3PoolService.cumulativeVolume(pool, duration);
+    }
+
+    @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
+    public List<Amount> historicalVolume(DgsDataFetchingEnvironment env, @InputArgument HistoryDuration duration) {
+        com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool = env.getSource();
+        return v3PoolService.getHistoricalVolume(pool, duration);
+    }
+
+    @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
+    public List<Amount> priceHistory(DgsDataFetchingEnvironment env, @InputArgument HistoryDuration duration) {
+        com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool = env.getSource();
+        return v3PoolService.getPriceHistory(pool, duration);
+    }
+
+    @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
+    public Amount totalLiquidityPercentChange24h(DgsDataFetchingEnvironment env) {
+        com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool = env.getSource();
+        return v3PoolService.getTotalLiquidityPercentChange24h(pool);
+    }
+
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
+    public List<V3Pool> topV3Pools(@InputArgument Chain chain,
+                                 @InputArgument Integer first,
+                                 @InputArgument Float tvlCursor,
+                                 @InputArgument String tokenFilter) {
+        return v3PoolService.topV3Pools(chain, first, tvlCursor, tokenFilter);
     }
 }
