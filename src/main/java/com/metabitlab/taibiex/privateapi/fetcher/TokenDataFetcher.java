@@ -86,6 +86,7 @@ public class TokenDataFetcher {
                 setStandard(TokenStandard.ERC20);
                 setName(token.getName());
                 setSymbol(token.getSymbol());
+                setDecimals(token.getDecimals().intValue());
                 // TODO: 以下字段需要填值
                 setFeeData(null);
                 // TODO: 不支持 V2Transactions
