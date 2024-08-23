@@ -54,6 +54,8 @@ public class TokenDataFetcher {
         this.tokenMarketService = tokenMarketService;
     }
 
+    private final Chain TABI = Chain.TABI;
+
     @Autowired
     BundleSubgraphFetcher bundleSubgraphFetcher;
 
@@ -115,7 +117,6 @@ public class TokenDataFetcher {
     public List<PoolTransaction> v3Transactions(@InputArgument Integer first,
             @InputArgument("timestampCursor") Integer cursor) {
         // TODO: 目前仅支持单链 TABI
-        final Chain TABI = Chain.TABI;
 
         List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, TABI);
         List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, TABI);
