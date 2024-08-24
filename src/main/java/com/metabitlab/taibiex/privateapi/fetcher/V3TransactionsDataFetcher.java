@@ -30,10 +30,11 @@ public class V3TransactionsDataFetcher {
         @InputArgument Integer first,
         @InputArgument("timestampCursor") Integer cursor
     ) {
+        // NOTE: 忽略了 chain 参数
 
-        List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, TABI);
-        List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, TABI);
-        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, TABI);
+        List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, TABI, null);
+        List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, TABI, null);
+        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, TABI, null);
         
         return Stream.of(addList, removeList, swapsList)
                 .flatMap(List::stream)

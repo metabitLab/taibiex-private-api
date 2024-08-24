@@ -37,19 +37,20 @@ public class TransactionsSubgraphFetcher {
     @Autowired
     TokenService tokenService;
 
-    public List<PoolTransaction> mintsTransactions(Integer skip, Integer first, Integer cursor, Chain chain) {
+    public List<PoolTransaction> mintsTransactions(Integer skip, Integer first, Integer cursor, Chain chain, String address) {
+        Transaction_filter filter = new Transaction_filter();
+        if (cursor != null) {
+            filter.setTimestamp_gte(BigInteger.valueOf(cursor));
+        }
+        if (address != null) {
+            filter.setId(address);
+        }
+
         TransactionsGraphQLQuery.Builder builder = TransactionsGraphQLQuery.newRequest()
                 .skip(skip)
                 .first(first)
+                .where(filter)
                 .queryName("TransactionsSubgraphFetcher_mintsTransactions");
-
-        if (cursor != null) {
-            builder.where(new Transaction_filter() {
-                {
-                    setTimestamp_gte(BigInteger.valueOf(cursor));
-                }
-            });
-        }
 
         GraphQLQueryRequest request = new GraphQLQueryRequest(
                 builder.build(),
@@ -91,7 +92,7 @@ public class TransactionsSubgraphFetcher {
                 String usdValueId = encoder.encodeToString(
                         ("Amount:" + usdValue + "_" + Currency.USD).getBytes());
 
-                // TODO: 直接查询数据库，恐怕会有问题
+                // NOTE: 直接查询数据库，恐怕会有问题
                 Token token0 = tokenService.token(chain, mint.getToken0().getId());
                 Token token1 = tokenService.token(chain, mint.getToken1().getId());
 
@@ -140,19 +141,20 @@ public class TransactionsSubgraphFetcher {
         }).toList();
     }
 
-    public List<PoolTransaction> burnsTransactions(Integer skip, Integer first, Integer cursor, Chain chain) {
+    public List<PoolTransaction> burnsTransactions(Integer skip, Integer first, Integer cursor, Chain chain, String address) {
+        Transaction_filter filter = new Transaction_filter();
+        if (cursor != null) {
+            filter.setTimestamp_gte(BigInteger.valueOf(cursor));
+        }
+        if (address != null) {
+            filter.setId(address);
+        }
+
         TransactionsGraphQLQuery.Builder builder = TransactionsGraphQLQuery.newRequest()
                 .skip(skip)
                 .first(first)
-                .queryName("TransactionsSubgraphFetcher_burnsTransactions");
-
-        if (cursor != null) {
-            builder.where(new Transaction_filter() {
-                {
-                    setTimestamp_gte(BigInteger.valueOf(cursor));
-                }
-            });
-        }
+                .where(filter)
+                .queryName("TransactionsSubgraphFetcher_mintsTransactions");
 
         GraphQLQueryRequest request = new GraphQLQueryRequest(
                 builder.build(),
@@ -194,7 +196,7 @@ public class TransactionsSubgraphFetcher {
                 String usdValueId = encoder.encodeToString(
                         ("Amount:" + usdValue + "_" + Currency.USD).getBytes());
 
-                // TODO: 直接查询数据库，恐怕会有问题
+                // NOTE: 直接查询数据库，恐怕会有问题
                 Token token0 = tokenService.token(chain, burn.getToken0().getId());
                 Token token1 = tokenService.token(chain, burn.getToken1().getId());
 
@@ -243,19 +245,20 @@ public class TransactionsSubgraphFetcher {
         }).toList();
     }
 
-    public List<PoolTransaction> swapsTransactions(Integer skip, Integer first, Integer cursor, Chain chain) {
+    public List<PoolTransaction> swapsTransactions(Integer skip, Integer first, Integer cursor, Chain chain, String address) {
+        Transaction_filter filter = new Transaction_filter();
+        if (cursor != null) {
+            filter.setTimestamp_gte(BigInteger.valueOf(cursor));
+        }
+        if (address != null) {
+            filter.setId(address);
+        }
+
         TransactionsGraphQLQuery.Builder builder = TransactionsGraphQLQuery.newRequest()
                 .skip(skip)
                 .first(first)
-                .queryName("TransactionsSubgraphFetcher_swapsTransactions");
-
-        if (cursor != null) {
-            builder.where(new Transaction_filter() {
-                {
-                    setTimestamp_gte(BigInteger.valueOf(cursor));
-                }
-            });
-        }
+                .where(filter)
+                .queryName("TransactionsSubgraphFetcher_mintsTransactions");
 
         GraphQLQueryRequest request = new GraphQLQueryRequest(
                 builder.build(),
@@ -297,7 +300,7 @@ public class TransactionsSubgraphFetcher {
                 String usdValueId = encoder.encodeToString(
                         ("Amount:" + usdValue + "_" + Currency.USD).getBytes());
 
-                // TODO: 直接查询数据库，恐怕会有问题
+                // NOTE: 直接查询数据库，恐怕会有问题
                 Token token0 = tokenService.token(chain, swap.getToken0().getId());
                 Token token1 = tokenService.token(chain, swap.getToken1().getId());
 
