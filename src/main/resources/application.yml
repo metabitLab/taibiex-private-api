@@ -9,4 +9,4 @@ dgs:
 
 app:
   subgraphs:
-    endpoint: http://54.255.190.97:8000/subgraphs/name/tabi/uniswap-v3
+    endpoint: http://18.142.237.63:8000/subgraphs/name/tabi/uniswap-v3

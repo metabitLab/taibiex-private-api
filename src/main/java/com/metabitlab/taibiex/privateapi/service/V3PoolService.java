@@ -1,10 +1,7 @@
 package com.metabitlab.taibiex.privateapi.service;
 
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
-import com.metabitlab.taibiex.privateapi.subgraphfetcher.PoolDayDataSubgraphFetcher;
-import com.metabitlab.taibiex.privateapi.subgraphfetcher.PoolHourDataSubgraphFetcher;
-import com.metabitlab.taibiex.privateapi.subgraphfetcher.PoolMinuteDataSubgraphFetcher;
-import com.metabitlab.taibiex.privateapi.subgraphfetcher.PoolsSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.subgraphfetcher.*;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.util.DateUtil;
 import org.springframework.stereotype.Service;
@@ -13,6 +10,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,16 +27,20 @@ public class V3PoolService {
 
     private final PoolMinuteDataSubgraphFetcher poolMinuteDataSubgraphFetcher;
 
+    private final TickSubgraphFetcher tickSubgraphFetcher;
+
     public V3PoolService(TokenService tokenService,
                          PoolsSubgraphFetcher poolsSubgraphFetcher,
                          PoolDayDataSubgraphFetcher poolDayDataSubgraphFetcher,
                          PoolHourDataSubgraphFetcher poolHourDataSubgraphFetcher,
-                         PoolMinuteDataSubgraphFetcher poolMinuteDataSubgraphFetcher) {
+                         PoolMinuteDataSubgraphFetcher poolMinuteDataSubgraphFetcher,
+                         TickSubgraphFetcher tickSubgraphFetcher) {
         this.tokenService = tokenService;
         this.poolsSubgraphFetcher = poolsSubgraphFetcher;
         this.poolDayDataSubgraphFetcher = poolDayDataSubgraphFetcher;
         this.poolHourDataSubgraphFetcher = poolHourDataSubgraphFetcher;
         this.poolMinuteDataSubgraphFetcher = poolMinuteDataSubgraphFetcher;
+        this.tickSubgraphFetcher = tickSubgraphFetcher;
     }
 
     public com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool(Chain chain, String address) {
@@ -108,9 +110,14 @@ public class V3PoolService {
     }
 
     private Amount getWeekCumulativeVolume(V3Pool pool) {
-        List<PoolDayData> poolDayDataList = poolDayDataSubgraphFetcher.poolDayDatas(0, 7, PoolDayData_orderBy.date, OrderDirection.desc,
+        long[] oneDayTimestamp = DateUtil.getOneDayTimestamp(7);
+        List<String> ids = new ArrayList<>();
+        for (long timestamp : oneDayTimestamp) {
+            ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/86400);
+        }
+        List<PoolDayData> poolDayDataList = poolDayDataSubgraphFetcher.poolDayDatas(0, null, null, OrderDirection.desc,
                 new PoolDayData_filter() {{
-                    setPool(pool.getAddress());
+                    setId_in(ids);
                 }});
         if (poolDayDataList.isEmpty()){
             return null;
@@ -127,9 +134,14 @@ public class V3PoolService {
     }
 
     private Amount getDayCumulativeVolume(V3Pool pool) {
-        List<PoolHourData> poolHourDataList = poolHourDataSubgraphFetcher.poolHourDatas(0, 24, PoolHourData_orderBy.periodStartUnix, OrderDirection.desc,
+        long[] longs = DateUtil.get24HourTimestamp();
+        List<String> ids = new ArrayList<>();
+        for (long timestamp : longs) {
+            ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/3600);
+        }
+        List<PoolHourData> poolHourDataList = poolHourDataSubgraphFetcher.poolHourDatas(0, null, null, OrderDirection.desc,
                 new PoolHourData_filter() {{
-                    setPool(pool.getAddress());
+                    setId_in(ids);
                 }});
         if (poolHourDataList.isEmpty()){
             return null;
@@ -269,7 +281,6 @@ public class V3PoolService {
             case DAY -> {
                 return getDayPriceHistory(pool);
             }
-
             case WEEK -> {
                 return getWeekPriceHistory(pool);
             }
@@ -393,6 +404,20 @@ public class V3PoolService {
             );
             v3Pool.setId(pool.getId());
             return v3Pool;
+        }).collect(Collectors.toList());
+    }
+
+    public List<V3PoolTick> getV3PoolTicks(String address, Integer first){
+        List<Tick> ticks = tickSubgraphFetcher.ticks(0, first, Tick_orderBy.tickIdx, OrderDirection.desc,
+                Tick_filter.newBuilder().poolAddress(address).build()
+        );
+        return ticks.stream().map(tick -> {
+            V3PoolTick v3PoolTick = new V3PoolTick();
+            v3PoolTick.setId(tick.getId());
+            v3PoolTick.setTickIdx(tick.getTickIdx().intValue());
+            v3PoolTick.setLiquidityGross(tick.getLiquidityGross().toString());
+            v3PoolTick.setLiquidityNet(tick.getLiquidityNet().toString());
+            return v3PoolTick;
         }).collect(Collectors.toList());
     }
 }

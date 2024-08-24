@@ -23,24 +23,51 @@ public class PoolsSubgraphFetcher {
 
     @Autowired
     SubgraphsClient subgraphsClient;
-  
+
     public List<Pool> pools(int skip, int first, Pool_orderBy orderBy, OrderDirection orderDirection, Pool_filter where) {
-      PoolsGraphQLQuery poolsQuery = PoolsGraphQLQuery.newRequest()
-        .skip(skip)
-        .first(first)
-        .queryName("PoolsSubgraphFetcher_pools")
-        .build();
+        PoolsGraphQLQuery poolsQuery = PoolsGraphQLQuery.newRequest()
+                .skip(skip)
+                .first(first)
+                .orderBy(orderBy)
+                .orderDirection(orderDirection)
+                .where(where)
+                .queryName("PoolsSubgraphFetcher_pools")
+                .build();
 
-      PoolsProjectionRoot<?, ?> poolsProjection = new PoolsProjectionRoot<>()
-        .token0Price()
-        .id();
+        PoolProjectionRoot<?, ?> poolProjection = new PoolProjectionRoot<>()
+                .id()
+                .createdAtTimestamp()
+                .createdAtBlockNumber()
+                .token0Price()
+                .token1Price()
+                .liquidity()
+                .sqrtPrice()
+                .feeTier()
+                .tick()
+                .liquidityProviderCount()
+                .collectedFeesToken0()
+                .collectedFeesToken1()
+                .collectedFeesUSD()
+                .observationIndex()
+                .volumeToken0()
+                .volumeToken1()
+                .volumeUSD()
+                .untrackedVolumeUSD()
+                .txCount()
+                .totalValueLockedToken0()
+                .totalValueLockedToken1()
+                .totalValueLockedETH()
+                .totalValueLockedUSD()
+                .totalValueLockedUSDUntracked()
+                .feesUSD();
 
-      GraphQLQueryRequest request = new GraphQLQueryRequest(poolsQuery, poolsProjection);
-      GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
+        GraphQLQueryRequest request = new GraphQLQueryRequest(poolsQuery, poolProjection);
+        GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
 
-      List<Pool> pools = response.extractValueAsObject("pools", new TypeRef<List<Pool>>() {});
+        List<Pool> pools = response.extractValueAsObject("pools", new TypeRef<List<Pool>>() {
+        });
 
-      return pools;
+        return pools;
     }
 
     public Pool pool(String id) {
