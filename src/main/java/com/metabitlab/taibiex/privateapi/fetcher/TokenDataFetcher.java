@@ -121,15 +121,10 @@ public class TokenDataFetcher {
         if (token == null) {
             throw new MissSourceException("Token is required", "token");
         }
-        Chain chain = token.getChain();
 
-        List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, chain, null);
-        List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, chain, null);
-        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, chain, null);
+        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, token);
         
-        return Stream.of(addList, removeList, swapsList)
-                .flatMap(List::stream)
-                .toList();
+        return swapsList;
     }
 
     @DgsData(parentType = "TokenMarket", field = "pricePercentChange")

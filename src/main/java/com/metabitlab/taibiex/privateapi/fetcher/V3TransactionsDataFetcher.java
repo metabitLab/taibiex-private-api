@@ -1,5 +1,6 @@
 package com.metabitlab.taibiex.privateapi.fetcher;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -38,6 +39,13 @@ public class V3TransactionsDataFetcher {
         
         return Stream.of(addList, removeList, swapsList)
                 .flatMap(List::stream)
+                .sorted(new Comparator<PoolTransaction>() {
+                    @Override
+                    public int compare(PoolTransaction o1, PoolTransaction o2) {
+                        return o2.getTimestamp() - o1.getTimestamp();
+                    }
+                })
+                .limit(first)
                 .toList();
     }
 }
