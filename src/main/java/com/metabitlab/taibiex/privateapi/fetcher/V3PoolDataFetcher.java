@@ -84,4 +84,10 @@ public class V3PoolDataFetcher {
                 .flatMap(List::stream)
                 .toList();
     }
+
+    @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
+    public List<V3PoolTick> ticks(@InputArgument Integer first, DgsDataFetchingEnvironment env) {
+        com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool = env.getSource();
+        return v3PoolService.getV3PoolTicks(pool.getAddress(), first);
+    }
 }
