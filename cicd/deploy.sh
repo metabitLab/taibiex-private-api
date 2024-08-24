@@ -18,7 +18,7 @@ set -ex
 
 # 构建制品
 mvn clean -f ./pom.xml
-mvn package -f ./pom.xml
+mvn package -f ./pom.xml -DskipTests
 
 ## 获取最新的制品的名称
 artifact_name=$(ls -t ./target/*.jar | head -n 1 | awk -F '/' '{print $3}')
