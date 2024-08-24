@@ -31,7 +31,7 @@ if [ "$confirm_0" != "Y" ]; then
 fi
 
 # 上传制品的临时目录 /tmp
-scp -i taibiex-gateway.pem ./target/taibiex-private-api-*.*.*-SNAPSHOT.jar ubuntu@ec2-54-234-143-228.compute-1.amazonaws.com:/tmp
+scp -i taibiex-gateway.pem ./target/$artifact_name ubuntu@ec2-54-234-143-228.compute-1.amazonaws.com:/tmp
 
 ## 通过 ssh 登录远程服务器后，远程执行命令：将制品从临时目录移动到部署目录
 ssh -i taibiex-gateway.pem ubuntu@ec2-54-234-143-228.compute-1.amazonaws.com > /dev/null 2>&1 << remote
