@@ -35,6 +35,7 @@ import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDire
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Swap;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Swap_filter;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Swap_orderBy;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 
@@ -279,12 +280,20 @@ public class TransactionsSubgraphFetcher {
         filter.setOr(Arrays.asList(
                 new Swap_filter() {
                     {
-                        setToken0(token.getAddress());
+                        setToken0_(new Token_filter() {
+                            {
+                                setId(token.getAddress());
+                            }
+                        });
                     }
                 },
                 new Swap_filter() {
                     {
-                        setToken1(token.getAddress());
+                        setToken1_(new Token_filter() {
+                            {
+                                setId(token.getAddress());
+                            }
+                        });
                     }
                 }));
 
