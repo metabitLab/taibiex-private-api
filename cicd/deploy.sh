@@ -11,8 +11,8 @@
 
 # 该脚本需要在本地执行，需要本地环境有 maven、scp、ssh 等命令
 # 该脚本需要在本地执行，需要在本地有 taibiex-gateway.pem 文件
-# 该脚本需要在远程服务器上执行，需要远程服务器有 java 环境
-# 该脚本需要在远程服务器上执行，需要远程服务器有 /home/taibiex-private-api 目录
+# 该脚本需要远程服务器有 java 环境
+# 该脚本需要远程服务器有 /home/taibiex-private-api 目录
 
 set -ex
 
