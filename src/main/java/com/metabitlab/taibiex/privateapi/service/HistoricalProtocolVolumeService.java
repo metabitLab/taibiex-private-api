@@ -77,7 +77,7 @@ public class HistoricalProtocolVolumeService {
 
             int year = date.getYear();
             int month = date.getMonthValue();
-            String key = year + "-" + month;
+            String key = year + "-" + String.format("%02d", month);
 
             Double total = map.get(key);
             if (total == null) {
