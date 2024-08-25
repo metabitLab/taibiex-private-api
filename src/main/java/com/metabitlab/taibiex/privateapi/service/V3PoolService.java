@@ -1,6 +1,7 @@
 package com.metabitlab.taibiex.privateapi.service;
 
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.*;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.util.DateUtil;
@@ -8,10 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,6 +78,10 @@ public class V3PoolService {
         return Base64.getEncoder().encodeToString(("AMOUNT:" + value + "_" + currency).getBytes());
     }
 
+    private String getTimestampedAmountIdEncoded(double value, String currency, String timestamp) {
+        return Base64.getEncoder().encodeToString(("AMOUNT:" + value + "_" + currency + "_" + timestamp).getBytes());
+    }
+
     public Amount cumulativeVolume(V3Pool pool, HistoryDuration duration) {
         switch (duration){
             case DAY:
@@ -110,7 +112,7 @@ public class V3PoolService {
     }
 
     private Amount getWeekCumulativeVolume(V3Pool pool) {
-        long[] oneDayTimestamp = DateUtil.getOneDayTimestamp(7);
+        long[] oneDayTimestamp = DateUtil.getLastDayTimestamp(7);
         List<String> ids = new ArrayList<>();
         for (long timestamp : oneDayTimestamp) {
             ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/86400);
@@ -157,7 +159,7 @@ public class V3PoolService {
         return amount;
     }
 
-    public List<Amount> getHistoricalVolume(V3Pool pool, HistoryDuration duration) {
+    public List<TimestampedAmount> getHistoricalVolume(V3Pool pool, HistoryDuration duration) {
         switch (duration){
             case DAY -> {
                 return getDayHistoricalVolume(pool);
@@ -180,66 +182,116 @@ public class V3PoolService {
         }
     }
 
-    public List<Amount> getHourHistoricalVolume(V3Pool pool) {
-        long[] fiveMinuteTimestamp = DateUtil.getFiveMinuteTimestamp(12);
-        List<String> ids = new ArrayList<>();
-        for (long timestamp : fiveMinuteTimestamp) {
-            ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/60);
+    public List<TimestampedAmount> getHourHistoricalVolume(V3Pool pool) {
+        long[] last60MinuteTimestamp = DateUtil.getLastMinuteTimestamp(60);
+        int batchSize = 5;
+        int totalElements = last60MinuteTimestamp.length;
+        int batches = (int) Math.ceil((double) totalElements / batchSize);
+        List<TimestampedAmount> amounts = new ArrayList<>();
+        if (totalElements > 0 ){
+            for (int i = 0; i < batches; i++){
+                int fromIndex = i * batchSize;
+                int toIndex = Math.min((i + 1) * batchSize, totalElements);
+                long[] batch = Arrays.copyOfRange(last60MinuteTimestamp, fromIndex, toIndex);
+                List<String> ids = new ArrayList<>();
+                for (long timestamp : batch) {
+                    ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/60);
+                }
+                if (batch.length > 0){
+                    List<PoolMinuteData> poolMinuteDataList = poolMinuteDataSubgraphFetcher.poolMinuteDatas(0, null, PoolMinuteData_orderBy.periodStartUnix, OrderDirection.desc,
+                            new PoolMinuteData_filter() {{
+                                setId_in(ids);
+                            }});
+                    BigDecimal totalVolume = BigDecimal.ZERO;
+                    for (PoolMinuteData poolMinuteData : poolMinuteDataList) {
+                        totalVolume = totalVolume.add(poolMinuteData.getVolumeUSD());
+                    }
+                    TimestampedAmount amount = new TimestampedAmount();
+                    amount.setCurrency(Currency.USD);
+                    amount.setValue(totalVolume.doubleValue());
+                    amount.setId(getTimestampedAmountIdEncoded(totalVolume.doubleValue(), "USD", String.valueOf(batch[4])));
+                    amount.setTimestamp((int) batch[4]);
+                    amounts.add(amount);
+                }
+            }
         }
-        List<PoolMinuteData> poolHourDataList = poolMinuteDataSubgraphFetcher.poolMinuteDatas(0, null, PoolMinuteData_orderBy.periodStartUnix, OrderDirection.desc,
-                new PoolMinuteData_filter() {{
-                    setId_in(ids);
-                }});
-        return poolHourDataList.stream().map(poolHourData -> {
-            Amount amount = new Amount();
-            amount.setCurrency(Currency.USD);
-            amount.setValue(poolHourData.getVolumeUSD().doubleValue());
-            amount.setId(getAmountIdEncoded(poolHourData.getVolumeUSD().doubleValue(), "USD"));
-            return amount;
-        }).collect(Collectors.toList());
-
+        return amounts;
     }
 
-    public List<Amount> getDayHistoricalVolume(V3Pool pool) {
-        long[] fiveMinuteTimestamp = DateUtil.get24HourTimestamp();
-        List<String> ids = new ArrayList<>();
-        for (long timestamp : fiveMinuteTimestamp) {
-            ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/60);
+    public List<TimestampedAmount> getDayHistoricalVolume(V3Pool pool) {
+        long[] last60MinuteTimestamp = DateUtil.getLastMinuteTimestamp(60 * 24);
+        int batchSize = 60;
+        int totalElements = last60MinuteTimestamp.length;
+        int batches = (int) Math.ceil((double) totalElements / batchSize);
+        List<TimestampedAmount> amounts = new ArrayList<>();
+        if (totalElements > 0 ){
+            for (int i = 0; i < batches; i++){
+                int fromIndex = i * batchSize;
+                int toIndex = Math.min((i + 1) * batchSize, totalElements);
+                long[] batch = Arrays.copyOfRange(last60MinuteTimestamp, fromIndex, toIndex);
+                List<String> ids = new ArrayList<>();
+                for (long timestamp : batch) {
+                    ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/60);
+                }
+                if (batch.length > 0){
+                    List<PoolMinuteData> poolMinuteDataList = poolMinuteDataSubgraphFetcher.poolMinuteDatas(0, null, PoolMinuteData_orderBy.periodStartUnix, OrderDirection.desc,
+                            new PoolMinuteData_filter() {{
+                                setId_in(ids);
+                            }});
+                    BigDecimal totalVolume = BigDecimal.ZERO;
+                    for (PoolMinuteData poolMinuteData : poolMinuteDataList) {
+                        totalVolume = totalVolume.add(poolMinuteData.getVolumeUSD());
+                    }
+                    TimestampedAmount amount = new TimestampedAmount();
+                    amount.setCurrency(Currency.USD);
+                    amount.setValue(totalVolume.doubleValue());
+                    amount.setId(getTimestampedAmountIdEncoded(totalVolume.doubleValue(), "USD", String.valueOf(batch[batch.length - 1])));
+                    amount.setTimestamp((int) batch[batch.length - 1]);
+                    amounts.add(amount);
+                }
+            }
         }
-        List<PoolMinuteData> poolMinuteDatas = poolMinuteDataSubgraphFetcher.poolMinuteDatas(0, null, PoolMinuteData_orderBy.periodStartUnix, OrderDirection.desc,
-                new PoolMinuteData_filter() {{
-                    setId_in(ids);
-                }});
-        return poolMinuteDatas.stream().map(poolMinuteData -> {
-            Amount amount = new Amount();
-            amount.setCurrency(Currency.USD);
-            amount.setValue(poolMinuteData.getVolumeUSD().doubleValue());
-            amount.setId(getAmountIdEncoded(poolMinuteData.getVolumeUSD().doubleValue(), "USD"));
-            return amount;
-        }).collect(Collectors.toList());
+        return amounts;
     }
 
-    public List<Amount> getWeekHistoricalVolume(V3Pool pool) {
-        long[] sixHourTimestamp = DateUtil.getSixHourTimestamp(28);
-        List<String> ids = new ArrayList<>();
-        for (long timestamp : sixHourTimestamp) {
-            ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/3600);
+    public List<TimestampedAmount> getWeekHistoricalVolume(V3Pool pool) {
+        long[] lastHourTimestamp = DateUtil.getLastHourTimestamp(24 * 7);
+        int batchSize = 6;
+        int totalElements = lastHourTimestamp.length;
+        int batches = (int) Math.ceil((double) totalElements / batchSize);
+        List<TimestampedAmount> amounts = new ArrayList<>();
+        if (totalElements > 0 ){
+            for (int i = 0; i < batches; i++){
+                int fromIndex = i * batchSize;
+                int toIndex = Math.min((i + 1) * batchSize, totalElements);
+                long[] batch = Arrays.copyOfRange(lastHourTimestamp, fromIndex, toIndex);
+                List<String> ids = new ArrayList<>();
+                for (long timestamp : batch) {
+                    ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/ 60 * 60);
+                }
+                if (batch.length > 0){
+                    List<PoolHourData> poolHourDataList = poolHourDataSubgraphFetcher.poolHourDatas(0, null, PoolHourData_orderBy.periodStartUnix, OrderDirection.desc,
+                            new PoolHourData_filter() {{
+                                setId_in(ids);
+                            }});
+                    BigDecimal totalVolume = BigDecimal.ZERO;
+                    for (PoolHourData poolHourData : poolHourDataList) {
+                        totalVolume = totalVolume.add(poolHourData.getVolumeUSD());
+                    }
+                    TimestampedAmount amount = new TimestampedAmount();
+                    amount.setCurrency(Currency.USD);
+                    amount.setValue(totalVolume.doubleValue());
+                    amount.setId(getTimestampedAmountIdEncoded(totalVolume.doubleValue(), "USD", String.valueOf(batch[batch.length - 1])));
+                    amount.setTimestamp((int) batch[batch.length - 1]);
+                    amounts.add(amount);
+                }
+            }
         }
-        List<PoolHourData> poolHourDataList = poolHourDataSubgraphFetcher.poolHourDatas(0, null, PoolHourData_orderBy.periodStartUnix, OrderDirection.desc,
-                new PoolHourData_filter() {{
-                    setId_in(ids);
-                }});
-        return poolHourDataList.stream().map(poolHourData -> {
-            Amount amount = new Amount();
-            amount.setCurrency(Currency.USD);
-            amount.setValue(poolHourData.getVolumeUSD().doubleValue());
-            amount.setId(getAmountIdEncoded(poolHourData.getVolumeUSD().doubleValue(), "USD"));
-            return amount;
-        }).collect(Collectors.toList());
+        return amounts;
     }
 
-    public List<Amount> getMonthHistoricalVolume(V3Pool pool) {
-        long[] oneDayTimestamp = DateUtil.getOneDayTimestamp(30);
+    public List<TimestampedAmount> getMonthHistoricalVolume(V3Pool pool) {
+        long[] oneDayTimestamp = DateUtil.getLastDayTimestamp(30);
         List<String> ids = new ArrayList<>();
         for (long timestamp : oneDayTimestamp) {
             ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/86400);
@@ -248,32 +300,56 @@ public class V3PoolService {
                 new PoolDayData_filter() {{
                     setId_in(ids);
                 }});
-        return poolDayDataList.stream().map(poolDayData -> {
-            Amount amount = new Amount();
+
+        List<TimestampedAmount> amounts = new ArrayList<>();
+
+        for (int i = 0; i < poolDayDataList.size(); i++) {
+            PoolDayData poolDayData = poolDayDataList.get(i);
+            TimestampedAmount amount = new TimestampedAmount();
             amount.setCurrency(Currency.USD);
             amount.setValue(poolDayData.getVolumeUSD().doubleValue());
-            amount.setId(getAmountIdEncoded(poolDayData.getVolumeUSD().doubleValue(), "USD"));
-            return amount;
-        }).collect(Collectors.toList());
+            amount.setId(getTimestampedAmountIdEncoded(poolDayData.getVolumeUSD().doubleValue(), "USD", String.valueOf(oneDayTimestamp[i])));
+            amount.setTimestamp((int) oneDayTimestamp[i]);
+            amounts.add(amount);
+        }
+
+        return amounts;
     }
 
-    public List<Amount> getYearHistoricalVolume(V3Pool pool) {
-        long[] oneDayTimestamp = DateUtil.getSevenDayTimestamp(52);
-        List<String> ids = new ArrayList<>();
-        for (long timestamp : oneDayTimestamp) {
-            ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/86400);
+    public List<TimestampedAmount> getYearHistoricalVolume(V3Pool pool) {
+        long[] lastDayTimestamp = DateUtil.getLastDayTimestamp(52 * 7);
+        int batchSize = 7;
+        int totalElements = lastDayTimestamp.length;
+        int batches = (int) Math.ceil((double) totalElements / batchSize);
+        List<TimestampedAmount> amounts = new ArrayList<>();
+        if (totalElements > 0 ){
+            for (int i = 0; i < batches; i++){
+                int fromIndex = i * batchSize;
+                int toIndex = Math.min((i + 1) * batchSize, totalElements);
+                long[] batch = Arrays.copyOfRange(lastDayTimestamp, fromIndex, toIndex);
+                List<String> ids = new ArrayList<>();
+                for (long timestamp : batch) {
+                    ids.add(pool.getAddress().toLowerCase() + "-" + timestamp/ 86400);
+                }
+                if (batch.length > 0){
+                    List<PoolDayData> poolDayDataList = poolDayDataSubgraphFetcher.poolDayDatas(0, null, PoolDayData_orderBy.date, OrderDirection.desc,
+                            new PoolDayData_filter() {{
+                                setId_in(ids);
+                            }});
+                    BigDecimal totalVolume = BigDecimal.ZERO;
+                    for (PoolDayData poolDayData : poolDayDataList) {
+                        totalVolume = totalVolume.add(poolDayData.getVolumeUSD());
+                    }
+                    TimestampedAmount amount = new TimestampedAmount();
+                    amount.setCurrency(Currency.USD);
+                    amount.setValue(totalVolume.doubleValue());
+                    amount.setId(getTimestampedAmountIdEncoded(totalVolume.doubleValue(), "USD", String.valueOf(batch[batch.length - 1])));
+                    amount.setTimestamp((int) batch[batch.length - 1]);
+                    amounts.add(amount);
+                }
+            }
         }
-        List<PoolDayData> poolDayDataList = poolDayDataSubgraphFetcher.poolDayDatas(0, null, PoolDayData_orderBy.date, OrderDirection.desc,
-                new PoolDayData_filter() {{
-                    setId_in(ids);
-                }});
-        return poolDayDataList.stream().map(poolDayData -> {
-            Amount amount = new Amount();
-            amount.setCurrency(Currency.USD);
-            amount.setValue(poolDayData.getVolumeUSD().doubleValue());
-            amount.setId(getAmountIdEncoded(poolDayData.getVolumeUSD().doubleValue(), "USD"));
-            return amount;
-        }).collect(Collectors.toList());
+        return amounts;
     }
 
     public List<Amount> getPriceHistory(V3Pool pool, HistoryDuration duration) {

@@ -28,7 +28,7 @@ public class V3PoolDataFetcher {
     }
 
     @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
-    public List<Amount> historicalVolume(DgsDataFetchingEnvironment env, @InputArgument HistoryDuration duration) {
+    public List<TimestampedAmount> historicalVolume(DgsDataFetchingEnvironment env, @InputArgument HistoryDuration duration) {
         com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool = env.getSource();
         return v3PoolService.getHistoricalVolume(pool, duration);
     }

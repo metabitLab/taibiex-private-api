@@ -110,15 +110,43 @@ public class DateUtil {
         return timestamps;
     }
 
+    /**
+     * 获取过去每分钟的起始时间戳
+     * @param length
+     * @return
+     */
+    public static long[] getLastMinuteTimestamp (int length) {
+        long[] timestamps = new long[length];
+        long currentMinuteTimestamp = getCurrentMinuteTimestamp();
+        for (int i = 0; i < length; i++) {
+            timestamps[i] = currentMinuteTimestamp - ( (length - i) * 60);
+        }
+        return timestamps;
+    }
+
+    /**
+     * 从当前小时起始时间起，获取过去每小时的起始时间戳
+     * @param length
+     * @return
+     */
+    public static long[] getLastHourTimestamp (int length) {
+        long[] timestamps = new long[length];
+        long currentHourTimestamp = getCurrentHourTimestamp();
+        for (int i = 0; i < length; i++) {
+            timestamps[i] = currentHourTimestamp - ( (length - i) * 3600);
+        }
+        return timestamps;
+    }
+
     /*
      * 从当前日期起始时间起，每天获取一次时间戳
      * @param length 获取时间戳的个数
      */
-    public static long[] getOneDayTimestamp (int length) {
+    public static long[] getLastDayTimestamp (int length) {
         long[] timestamps = new long[length];
         long currentDayTimestamp = getCurrentDayTimestamp();
         for (int i = 0; i < length; i++) {
-            timestamps[i] = currentDayTimestamp - (i * 86400);
+            timestamps[i] = currentDayTimestamp - ((length - i) * 86400);
         }
         return timestamps;
     }
@@ -164,21 +192,12 @@ public class DateUtil {
     }
 
     /*
-     * 从当前小时起始时间起，获取过去24小时的起始时间戳
+     * 从当前小时起始时间起，获取过去24小时每个小时的起始时间戳
      */
     public static long[] get24HourTimestamp () {
         long[] timestamps = new long[24];
         long currentHourTimestamp = getCurrentHourTimestamp();
         for (int i = 0; i < 24; i++) {
-            timestamps[i] = currentHourTimestamp - (i * 3600);
-        }
-        return timestamps;
-    }
-
-    public static long[] getLastHourTimestamp (int length) {
-        long[] timestamps = new long[length];
-        long currentHourTimestamp = getCurrentHourTimestamp();
-        for (int i = 0; i < length; i++) {
             timestamps[i] = currentHourTimestamp - (i * 3600);
         }
         return timestamps;
@@ -213,7 +232,7 @@ public class DateUtil {
 
 
     public static void main(String[] args) {
-        long[] longs = getSixHourTimestamp(28);
+        long[] longs = getLastMinuteTimestamp(60);
         for (long aLong : longs) {
             System.out.println(aLong);
         }
