@@ -1,11 +1,17 @@
 package com.metabitlab.taibiex.privateapi.fetcher;
 
+import com.metabitlab.taibiex.privateapi.errors.MissSourceException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.V3PoolService;
+import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
 import com.netflix.graphql.dgs.*;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
+
+import org.springframework.beans.factory.annotation.Autowired;
 
 @DgsComponent
 public class V3PoolDataFetcher {
@@ -15,6 +21,9 @@ public class V3PoolDataFetcher {
     public V3PoolDataFetcher(V3PoolService v3PoolService) {
         this.v3PoolService = v3PoolService;
     }
+
+    @Autowired
+    TransactionsSubgraphFetcher transactionsSubgraphFetcher;
 
     @DgsQuery(field = "v3Pool")
     public V3Pool getV3Pool(@InputArgument Chain chain, @InputArgument String address) {
@@ -51,6 +60,37 @@ public class V3PoolDataFetcher {
                                  @InputArgument Float tvlCursor,
                                  @InputArgument String tokenFilter) {
         return v3PoolService.topV3Pools(chain, first, tvlCursor, tokenFilter);
+    }
+
+    @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
+    public List<PoolTransaction> transactions(
+        @InputArgument Integer first,
+        @InputArgument("timestampCursor") Integer cursor,
+        DgsDataFetchingEnvironment env
+    ) {
+        V3Pool pool = env.getSource();
+        if (pool == null) {
+            throw new MissSourceException("V3Pool is required", "V3Pool");
+        }
+
+        Chain chain = pool.getChain();
+        String address = pool.getAddress();
+
+        // NOTE: 将 V3Pool 的地址作为 Subgraphs 中 Pool 的 ID 使用
+        List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, chain, address);
+        List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, chain, address);
+        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, chain, address);
+        
+        return Stream.of(addList, removeList, swapsList)
+                .flatMap(List::stream)
+                .sorted(new Comparator<PoolTransaction>() {
+                    @Override
+                    public int compare(PoolTransaction o1, PoolTransaction o2) {
+                        return o2.getTimestamp() - o1.getTimestamp();
+                    }
+                })
+                .limit(first)
+                .toList();
     }
 
     @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)

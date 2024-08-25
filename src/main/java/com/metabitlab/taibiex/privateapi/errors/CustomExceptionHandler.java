@@ -101,6 +101,21 @@ public class CustomExceptionHandler implements DataFetcherExceptionHandler {
       return CompletableFuture.completedFuture(result);
     }
 
+    if (exception instanceof MissSourceException) {
+      debugInfo.put("Source", ((MissSourceException)exception).getSourceDescription());
+
+      TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
+              .message("privateapi exception: " + exception.getMessage())
+              .debugInfo(debugInfo)
+              .path(handlerParameters.getPath()).build();
+
+      DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
+              .error(graphqlError)
+              .build();
+
+      return CompletableFuture.completedFuture(result);
+    }
+
     return defaultHandler.handleException(handlerParameters);
   }
 }

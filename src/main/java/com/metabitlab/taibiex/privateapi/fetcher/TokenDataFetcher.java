@@ -7,9 +7,6 @@ import java.util.stream.Stream;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
-import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
-import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
-import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
@@ -25,6 +22,7 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
 import com.metabitlab.taibiex.privateapi.errors.MissLocalContextException;
+import com.metabitlab.taibiex.privateapi.errors.MissSourceException;
 import com.metabitlab.taibiex.privateapi.errors.MissVariableException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
@@ -71,6 +69,7 @@ public class TokenDataFetcher {
     @DgsQuery
     public DataFetcherResult<Token> token(@InputArgument Chain chain,
             @InputArgument String address) {
+        // NOTE: 忽略了 chain 参数, 目前仅支持单链 TABI
 
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = tokenSubgraphFetcher
                 .token(address);
@@ -78,12 +77,12 @@ public class TokenDataFetcher {
         Encoder encoder = Base64.getEncoder();
 
         String tokenId = encoder.encodeToString(
-                ("Token:" + chain + "_" + address).getBytes());
+                ("Token:" + TABI + "_" + address).getBytes());
 
         Token t = new Token() {
             {
                 setId(tokenId);
-                setChain(chain);
+                setChain(TABI);
                 setAddress(address);
                 setStandard(TokenStandard.ERC20);
                 setName(token.getName());
@@ -91,7 +90,7 @@ public class TokenDataFetcher {
                 setDecimals(token.getDecimals().intValue());
                 // TODO: 以下字段需要填值
                 setFeeData(null);
-                // TODO: 不支持 V2Transactions
+                // NOTE: 不支持 V2Transactions
                 setV2Transactions(null);
             }
         };
@@ -115,16 +114,17 @@ public class TokenDataFetcher {
 
     @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.V3Transactions)
     public List<PoolTransaction> v3Transactions(@InputArgument Integer first,
-            @InputArgument("timestampCursor") Integer cursor) {
-        // TODO: 目前仅支持单链 TABI
+            @InputArgument("timestampCursor") Integer cursor,
+            DgsDataFetchingEnvironment env) {
+        // NOTE: 目前仅支持单链 TABI
+        Token token = env.getSource();
+        if (token == null) {
+            throw new MissSourceException("Token is required", "token");
+        }
 
-        List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, TABI);
-        List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, TABI);
-        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, TABI);
+        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, token);
         
-        return Stream.of(addList, removeList, swapsList)
-                .flatMap(List::stream)
-                .toList();
+        return swapsList;
     }
 
     @DgsData(parentType = "TokenMarket", field = "pricePercentChange")
@@ -234,7 +234,7 @@ public class TokenDataFetcher {
 
         Bundle bundle = bundleSubgraphFetcher.bundle();
 
-        // TODO: 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
+        // NOTE: 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
 
         BigDecimal price = token.getDerivedETH().multiply(bundle.getEthPriceUSD());
         BigInteger totalSupply = token.getTotalSupply();
