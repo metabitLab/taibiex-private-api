@@ -8,10 +8,15 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
+
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import java.util.*;
+import java.util.Base64.Encoder;
 
 @Service
 public class TokenService {
@@ -92,5 +97,37 @@ public class TokenService {
         token.setChain(Chain.TABI);
         token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
         return token;
+    }
+
+    public Tuple2<com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> getTokenFromSubgraphs(
+            Chain chain, String address) {
+        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = tokenSubgraphFetcher
+                .token(address);
+
+        Encoder encoder = Base64.getEncoder();
+
+        String tokenId = encoder.encodeToString(
+                ("Token:" + chain + "_" + address).getBytes());
+
+        Token token = new Token() {
+            {
+                setId(tokenId);
+                setChain(chain);
+                setAddress(address);
+                setStandard(TokenStandard.ERC20);
+                setName(t.getName());
+                setSymbol(t.getSymbol());
+                setDecimals(t.getDecimals().intValue());
+                // TODO: 以下字段需要填值
+                setFeeData(null);
+                // NOTE: 不支持 V2Transactions
+                setV2Transactions(null);
+            }
+        };
+
+        Tuple2<com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> tuple = Tuple
+                .of(token, t);
+
+        return tuple;
     }
 }
