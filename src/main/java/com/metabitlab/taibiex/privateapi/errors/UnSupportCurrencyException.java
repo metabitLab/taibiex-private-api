@@ -1,19 +1,21 @@
 package com.metabitlab.taibiex.privateapi.errors;
 
+import java.util.List;
+
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
 
 public class UnSupportCurrencyException extends RuntimeException {
-  private Currency currency;
+  private List<Currency> currencies;
 
   /**
    * @return the currency
    */
-  public Currency getCurrency() {
-    return currency;
+  public List<Currency> getCurrencies() {
+    return currencies;
   }
 
-  public UnSupportCurrencyException(String message, Currency currency) {
+  public UnSupportCurrencyException(String message, List<Currency> currency) {
     super(message);
-    this.currency = currency;
+    this.currencies = currency;
   }
 }

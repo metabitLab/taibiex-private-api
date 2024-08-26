@@ -36,7 +36,7 @@ public class IsV3SubgraphStaleDataFetcher {
 
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle bundle = bundleSubgraphFetcher.bundle();
 
-        // NOTE: 如果 bundle 为空，则说明数据已过期
-        return bundle == null;
+        // NOTE: 如果 bundle 不为空，则为 true
+        return bundle != null;
     }
 }
