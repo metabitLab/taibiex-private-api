@@ -17,6 +17,8 @@ public class BundleSubgraphFetcher {
   SubgraphsClient subgraphsClient;
   
   public Bundle bundle() {
+    // NOTE: [已确认] 参数 id 写死为 "1"，目前仅支持查询 id 为 "1" 的 Bundle
+
     BundleGraphQLQuery bundleQuery = BundleGraphQLQuery.newRequest()
       .id("1")
       .queryName("BundleSubgraphFetcher_bundle")

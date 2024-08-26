@@ -31,7 +31,7 @@ public class V3TransactionsDataFetcher {
         @InputArgument Integer first,
         @InputArgument("timestampCursor") Integer cursor
     ) {
-        // NOTE: 忽略了 chain 参数
+        // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
 
         List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, TABI, null);
         List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, TABI, null);

@@ -26,7 +26,8 @@ public class DailyProtocolTvlDataFetcher {
     public List<TimestampedAmount> dailyProtocolTvl(
             @InputArgument Chain chain,
             @InputArgument("version") ProtocolVersion protocolVersion) {
-        // NOTE: 参数未使用
+        // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
+        // NOTE: [已确认] protocolVersion 参数未使用, 仅支持 V3
         List<TimestampedAmount> list = uniswapDayDataService.dayDataList(null, null, null, null, null);
 
         return list;

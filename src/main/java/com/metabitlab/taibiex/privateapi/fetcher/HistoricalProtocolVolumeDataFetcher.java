@@ -31,9 +31,11 @@ public class HistoricalProtocolVolumeDataFetcher {
             @InputArgument HistoryDuration duration) {
         switch (duration) {
             case DAY:
+                // TODO: 需要实现
             case WEEK:
+                // TODO: 需要实现
             case YEAR:
-                // TODO: 未实现 duration 为 DAY, WEEK, YEAR 的逻辑
+                // TODO: 需要实现
                 return null;
             case MONTH:
                 return historicalProtocolVolumeService.monthHistoricalProtocolVolume(chain, protocolVersion);

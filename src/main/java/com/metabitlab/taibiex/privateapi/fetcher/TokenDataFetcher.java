@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
+import com.metabitlab.taibiex.privateapi.service.TokenProjectMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -34,6 +35,7 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 
 import graphql.execution.DataFetcherResult;
+import io.vavr.Tuple2;
 
 @DgsComponent
 public class TokenDataFetcher {
@@ -55,6 +57,9 @@ public class TokenDataFetcher {
     private final Chain TABI = Chain.TABI;
 
     @Autowired
+    TokenProjectMarketService tokenProjectMarketService;
+
+    @Autowired
     BundleSubgraphFetcher bundleSubgraphFetcher;
 
     @Autowired
@@ -69,42 +74,24 @@ public class TokenDataFetcher {
     @DgsQuery
     public DataFetcherResult<Token> token(@InputArgument Chain chain,
             @InputArgument String address) {
-        // NOTE: 忽略了 chain 参数, 目前仅支持单链 TABI
+        // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
 
-        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = tokenSubgraphFetcher
-                .token(address);
-
-        Encoder encoder = Base64.getEncoder();
-
-        String tokenId = encoder.encodeToString(
-                ("Token:" + TABI + "_" + address).getBytes());
-
-        Token t = new Token() {
-            {
-                setId(tokenId);
-                setChain(TABI);
-                setAddress(address);
-                setStandard(TokenStandard.ERC20);
-                setName(token.getName());
-                setSymbol(token.getSymbol());
-                setDecimals(token.getDecimals().intValue());
-                // TODO: 以下字段需要填值
-                setFeeData(null);
-                // NOTE: 不支持 V2Transactions
-                setV2Transactions(null);
-            }
-        };
+        Tuple2<
+            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
+            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
+        > tuple = tokenService
+                .getTokenFromSubgraphs(TABI, address);
 
         return DataFetcherResult.<Token>newResult()
-                .data(t)
-                .localContext(token)
+                .data(tuple._1)
+                .localContext(tuple._2)
                 .build();
     }
 
     @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Market)
     public TokenMarket market(@InputArgument Currency currency, DgsDataFetchingEnvironment env) {
         if (currency != Currency.USD) {
-            throw new UnSupportCurrencyException("This currency is not supported", currency);
+            throw new UnSupportCurrencyException("This currency is not supported", Arrays.asList(currency));
         }
 
         com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t = env.getSource();
@@ -116,7 +103,6 @@ public class TokenDataFetcher {
     public List<PoolTransaction> v3Transactions(@InputArgument Integer first,
             @InputArgument("timestampCursor") Integer cursor,
             DgsDataFetchingEnvironment env) {
-        // NOTE: 目前仅支持单链 TABI
         Token token = env.getSource();
         if (token == null) {
             throw new MissSourceException("Token is required", "token");
@@ -160,10 +146,11 @@ public class TokenDataFetcher {
     @DgsData(parentType = DgsConstants.TOKENPROJECT.TYPE_NAME, field = DgsConstants.TOKENPROJECT.Markets)
     public List<TokenProjectMarket> markets(@InputArgument List<Currency> currencies,
             DgsDataFetchingEnvironment env) {
-        for (Currency currency : currencies) {
-            if (currency != Currency.USD) {
-                throw new UnSupportCurrencyException("This currency is not supported", currency);
-            }
+        if (currencies == null) {
+            throw new IllegalArgumentException("currencies is required");
+        }
+        if (currencies.size() > 1 || currencies.get(0) != Currency.USD) {
+            throw new UnSupportCurrencyException("Only the currency USD is supported", currencies);
         }
 
         final String chainKey = "chain";
@@ -171,49 +158,18 @@ public class TokenDataFetcher {
             throw new MissVariableException("chain is required", chainKey);
         }
 
-        TokenProject project = env.getSource();
-
         Chain chain = Chain.valueOf((String) env.getVariables().get(chainKey));
 
         // 原生代币地址为null，所以address允许为null
         String address = env.getArgument("address");
 
-        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = env.getLocalContext();
-        if (token == null) {
-            throw new MissLocalContextException("Token is required", "token");
-        }
+        Tuple2<
+            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
+            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
+        > tuple = tokenService
+                .getTokenFromSubgraphs(chain, address);
 
-        Encoder encoder = Base64.getEncoder();
-
-        Bundle bundle = bundleSubgraphFetcher.bundle();
-        String priceId = encoder.encodeToString(
-                ("Amount:" + bundle.getEthPriceUSD() + "_" + Currency.USD).getBytes());
-        String projectId = encoder.encodeToString(
-                ("TokenProject:" + chain + "_" + address + "_" + token.getName()).getBytes());
-        String projectMarketId = encoder.encodeToString(
-                ("TokenProjectMarket:" + projectId + "_" + Currency.USD).getBytes());
-
-        TokenProjectMarket onlyOneMarket = new TokenProjectMarket() {
-            {
-                setId(projectMarketId);
-                setTokenProject(project);
-                setCurrency(Currency.USD);
-                setPrice(new Amount() {
-                    {
-                        setId(priceId);
-                        setCurrency(Currency.USD);
-                        setValue(bundle.getEthPriceUSD().doubleValue());
-                    }
-                });
-                // TODO: 以下字段需要填值
-                setPricePercentChange24h(null);
-                setPriceHigh52w(null);
-                setPriceLow52w(null);
-                setPriceHistory(null);
-                setPricePercentChange(null);
-                setPriceHighLow(null);
-            }
-        };
+        TokenProjectMarket onlyOneMarket = tokenProjectMarketService.getMarketFromToken(tuple._1);
 
         return Arrays.asList(onlyOneMarket);
     }
@@ -234,7 +190,7 @@ public class TokenDataFetcher {
 
         Bundle bundle = bundleSubgraphFetcher.bundle();
 
-        // NOTE: 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
+        // NOTE: [已确认] 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
 
         BigDecimal price = token.getDerivedETH().multiply(bundle.getEthPriceUSD());
         BigInteger totalSupply = token.getTotalSupply();
