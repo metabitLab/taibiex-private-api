@@ -62,6 +62,13 @@ public class V3PoolDataFetcher {
         return v3PoolService.topV3Pools(chain, first, tvlCursor, tokenFilter);
     }
 
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
+    public List<V3Pool> v3PoolsForTokenPair(@InputArgument Chain chain,
+                                   @InputArgument String token0,
+                                   @InputArgument String token1) {
+        return v3PoolService.v3PoolsForTokenPair(chain, token0, token1);
+    }
+
     @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
     public List<PoolTransaction> transactions(
         @InputArgument Integer first,
@@ -94,8 +101,8 @@ public class V3PoolDataFetcher {
     }
 
     @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
-    public List<V3PoolTick> ticks(@InputArgument Integer first, DgsDataFetchingEnvironment env) {
+    public List<V3PoolTick> ticks(@InputArgument Integer first, @InputArgument Integer skip, DgsDataFetchingEnvironment env) {
         com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.V3Pool pool = env.getSource();
-        return v3PoolService.getV3PoolTicks(pool.getAddress(), first);
+        return v3PoolService.getV3PoolTicks(pool.getAddress(), first, skip);
     }
 }

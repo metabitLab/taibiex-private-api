@@ -483,8 +483,44 @@ public class V3PoolService {
         }).collect(Collectors.toList());
     }
 
-    public List<V3PoolTick> getV3PoolTicks(String address, Integer first){
-        List<Tick> ticks = tickSubgraphFetcher.ticks(0, first, Tick_orderBy.tickIdx, OrderDirection.desc,
+    public List<V3Pool> v3PoolsForTokenPair(Chain chain, String token0, String token1) {
+        List<Pool> pools = poolsSubgraphFetcher.pools(0, 100000, Pool_orderBy.totalValueLockedUSD, OrderDirection.desc,
+                Pool_filter.newBuilder().token0(token0).token1(token1).build()
+                );
+        if (pools.isEmpty()){
+            return null;
+        }
+        return pools.stream().map(pool -> {
+            V3Pool v3Pool = new V3Pool();
+            v3Pool.setAddress(pool.getId());
+            v3Pool.setChain(Chain.TABI);
+            v3Pool.setCreatedAtTimestamp(pool.getCreatedAtTimestamp().intValue());
+            v3Pool.setProtocolVersion(ProtocolVersion.V3);
+            v3Pool.setFeeTier(pool.getFeeTier().doubleValue());
+            v3Pool.setTotalLiquidity(
+                    new Amount() {{
+                        setId(getAmountIdEncoded(pool.getTotalValueLockedUSD().doubleValue(), "USD"));
+                        setCurrency(Currency.USD);
+                        setValue(pool.getLiquidity().doubleValue());
+                    }}
+            );
+            v3Pool.setToken0Supply(pool.getTotalValueLockedToken0().doubleValue());
+            v3Pool.setToken1Supply(pool.getTotalValueLockedToken1().doubleValue());
+            v3Pool.setTxCount(pool.getTxCount().intValue());
+            v3Pool.setFeeTier(pool.getFeeTier().doubleValue());
+            v3Pool.setToken0(
+                    tokenService.token(Chain.TABI, pool.getToken0().getId())
+            );
+            v3Pool.setToken1(
+                    tokenService.token(Chain.TABI, pool.getToken1().getId())
+            );
+            v3Pool.setId(pool.getId());
+            return v3Pool;
+        }).collect(Collectors.toList());
+    }
+
+    public List<V3PoolTick> getV3PoolTicks(String address, Integer first, Integer skip){
+        List<Tick> ticks = tickSubgraphFetcher.ticks(skip, first, Tick_orderBy.tickIdx, OrderDirection.desc,
                 Tick_filter.newBuilder().poolAddress(address).build()
         );
         return ticks.stream().map(tick -> {
@@ -496,4 +532,5 @@ public class V3PoolService {
             return v3PoolTick;
         }).collect(Collectors.toList());
     }
+
 }

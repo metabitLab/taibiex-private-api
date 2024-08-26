@@ -1,6 +1,5 @@
 package com.metabitlab.taibiex.privateapi.service;
 
-import com.metabitlab.taibiex.privateapi.entity.TokenProjectEntity;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.mapper.CGlibMapper;
 import com.metabitlab.taibiex.privateapi.repository.TokenProjectRepository;
@@ -80,6 +79,7 @@ public class TokenService {
             token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
             token.setChain(Chain.TABI);
             token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
+            token.setDecimals(subGraphToken.getDecimals().intValue());
             tokenList.add(token);
         }
         return tokenList;
