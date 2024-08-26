@@ -32,6 +32,10 @@ public class TokenService {
 
     public List<Token> topTokens(Chain chain, Integer page, Integer pageSize, TokenSortableField orderBy) {
 
+        if (null == orderBy){
+            orderBy = TokenSortableField.VOLUME;
+        }
+
         Token_orderBy tokenOrderBy = switch (orderBy) {
             case TOTAL_VALUE_LOCKED -> Token_orderBy.totalValueLocked;
             case POPULARITY -> Token_orderBy.txCount;
