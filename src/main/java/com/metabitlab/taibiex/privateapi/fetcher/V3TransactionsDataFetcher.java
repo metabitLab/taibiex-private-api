@@ -3,9 +3,11 @@ package com.metabitlab.taibiex.privateapi.fetcher;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.metabitlab.taibiex.privateapi.errors.UnSupportChainException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PoolTransaction;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
@@ -32,6 +34,9 @@ public class V3TransactionsDataFetcher {
         @InputArgument("timestampCursor") Integer cursor
     ) {
         // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
+        if (chain != TABI) {
+            throw new UnSupportChainException("Those chains are not supported", Arrays.asList(chain));
+        }
 
         List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, TABI, null);
         List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, TABI, null);

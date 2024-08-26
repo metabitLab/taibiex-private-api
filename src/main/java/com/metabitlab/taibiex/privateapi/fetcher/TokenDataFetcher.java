@@ -2,7 +2,6 @@ package com.metabitlab.taibiex.privateapi.fetcher;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
@@ -77,7 +76,7 @@ public class TokenDataFetcher {
             @InputArgument String address) {
         // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
         if (chain != TABI) {
-            throw new UnSupportChainException("those chains are not supported", Arrays.asList(chain));
+            throw new UnSupportChainException("Those chains are not supported", Arrays.asList(chain));
         }
 
         Tuple2<
