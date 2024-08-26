@@ -14,16 +14,17 @@
 # 该脚本需要远程服务器有 java 环境
 # 该脚本需要远程服务器有 /home/taibiex-private-api 目录
 
-set -ex
+set -e
 
 # 构建制品
 mvn clean -f ./pom.xml
 mvn package -f ./pom.xml -DskipTests
 
 ## 获取最新的制品的名称
-artifact_name=$(ls -t ./target/*.jar | head -n 1 | awk -F '/' '{print $3}')
+artifact_name="$(ls -t ./target/*.jar | head -n 1 | awk -F '/' '{print $3}')"
 
-echo "已构建的制品名称：$artifact_name，是否继续上传制品并部署？(Y/[N])"
+echo "已构建的制品名称：$artifact_name, 是否继续上传制品并部署? (Y/[N])"
+
 read confirm_0
 if [ "$confirm_0" != "Y" ]; then
   echo "上传已取消"
