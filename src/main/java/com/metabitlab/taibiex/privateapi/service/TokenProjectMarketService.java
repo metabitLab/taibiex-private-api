@@ -65,7 +65,7 @@ public class TokenProjectMarketService {
                 setId(projectMarketId);
                 setTokenProject(project);
                 setCurrency(Currency.USD);
-                // 由其他 dgsDataFetcher 填充
+                // NOTE: 市场的价格百分比变化
                 // pricePercentChange
 
                 setPrice(new Amount() {
