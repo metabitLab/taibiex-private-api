@@ -6,11 +6,13 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsData;
 import com.netflix.graphql.dgs.InputArgument;
 
+import java.util.List;
+
 @DgsComponent
 public class NftCollectionDataFetcher {
 
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
-    public NftCollectionConnection topCollections(@InputArgument Chain chain,
+    public NftCollectionConnection topCollections(@InputArgument List<Chain> chains,
                                                   @InputArgument CollectionSortableField orderBy,
                                                   @InputArgument HistoryDuration duration,
                                                   @InputArgument String after,
@@ -24,7 +26,6 @@ public class NftCollectionDataFetcher {
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
     public NftCollectionConnection nftCollections(@InputArgument Chain chain,
                                                   @InputArgument NftCollectionsFilterInput filter,
-                                                  @InputArgument HistoryDuration duration,
                                                   @InputArgument String after,
                                                   @InputArgument Integer first) {
         return null;
