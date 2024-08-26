@@ -18,7 +18,7 @@ import java.util.Base64.Encoder;
 
 import com.metabitlab.taibiex.privateapi.service.TokenService;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
-import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenMarketSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenPriceSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
@@ -66,7 +66,7 @@ public class TokenDataFetcher {
     TokenSubgraphFetcher tokenSubgraphFetcher;
 
     @Autowired
-    TokenMarketSubgraphFetcher tokenMarketSubgraphFetcher;
+    TokenPriceSubgraphFetcher tokenMarketSubgraphFetcher;
 
     @Autowired
     TransactionsSubgraphFetcher transactionsSubgraphFetcher;

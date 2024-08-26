@@ -14,6 +14,7 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.AmountChange;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Chain;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
+import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.HighLow;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.HistoryDuration;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Portfolio;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PortfolioValueModifier;
@@ -109,6 +110,15 @@ public class PortfoliosDataFetcher {
         Token token = tokenBalance.getToken();
 
         return tokenProjectMarketService.getMarketFromToken(token);
+    }
+
+    @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME)
+    public Amount priceHighLow(
+        @InputArgument HistoryDuration duration,
+        @InputArgument HighLow highLow,
+        DgsDataFetchingEnvironment env
+    ) {
+        return null;
     }
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME)
