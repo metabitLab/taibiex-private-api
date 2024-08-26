@@ -1,10 +1,14 @@
 package com.metabitlab.taibiex.privateapi.service;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.WeekFields;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Base64;
@@ -18,7 +22,12 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.ProtocolVersion;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TimestampedAmount;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.UniswapDayDataSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.UniswapDayData;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.UniswapDayData_orderBy;
+
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 
 /**
  * This class provides historical protocol volume service.
@@ -28,6 +37,121 @@ import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.UniswapDa
 public class HistoricalProtocolVolumeService {
     @Autowired
     UniswapDayDataSubgraphFetcher uniswapDayDataSubgraphFetcher;
+
+    /**
+     * 按天汇总
+     * @param chain
+     * @param protocolVersion
+     * @return
+     */
+    public List<TimestampedAmount> dayHistoricalProtocolVolume(
+            Chain chain,
+            ProtocolVersion protocolVersion) {
+        List<UniswapDayData> list = uniswapDayDataSubgraphFetcher.dayDataList(
+                null,
+                30,
+                UniswapDayData_orderBy.date,
+                OrderDirection.desc,
+                null);
+
+        if (list == null) {
+            return null;
+        }
+
+        Encoder encoder = Base64.getEncoder();
+
+        return list.stream()
+                .sorted(new Comparator<UniswapDayData>() {
+                    @Override
+                    public int compare(UniswapDayData o1, UniswapDayData o2) {
+                        return o1.getDate() - o2.getDate();
+                    }
+                })
+                .map(item -> {
+                    String amountId = encoder.encodeToString(
+                        ("TimestampedAmount:" + item.getVolumeUSD().doubleValue() + "_" + Currency.USD + "_" + item.getDate()).getBytes()
+                    );
+                    TimestampedAmount amount = new TimestampedAmount() {
+                        {
+                            setId(amountId);
+                            setCurrency(Currency.USD);
+                            setValue(item.getVolumeUSD().doubleValue());
+                            setTimestamp(item.getDate());
+                        }
+                    };
+
+                    return amount;
+                })
+                .toList();
+    }
+
+    /**
+     * 按周汇总
+     * @param chain
+     * @param protocolVersion
+     * @return
+     */
+    public List<TimestampedAmount> weekHistoricalProtocolVolume(
+            Chain chain,
+            ProtocolVersion protocolVersion) {
+        List<UniswapDayData> list = uniswapDayDataSubgraphFetcher.dayDataList(
+                null,
+                364,
+                UniswapDayData_orderBy.date,
+                OrderDirection.desc,
+                null);
+
+        if (list == null) {
+            return null;
+        }
+
+        Comparator<Integer> customComparator = new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                return o1 - o2;
+            }
+        };
+
+        SortedMap<Integer, Double> map = new TreeMap<>(customComparator);
+        for (UniswapDayData item : list) {
+            Instant instant = Instant.ofEpochSecond(item.getDate().longValue());
+            LocalDate date = instant.atZone(ZoneId.of("UTC")).toLocalDate();
+            LocalDate monday = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            Instant mondayInstant = monday.atStartOfDay(ZoneId.of("UTC")).toInstant();
+
+            int mondayKey = (int)mondayInstant.getEpochSecond();
+
+            Double total = map.get(mondayKey);
+            if (total == null) {
+                total = 0.0;
+            }
+
+            // 汇总逻辑: 累积求和
+            map.put(mondayKey, total + item.getTvlUSD().doubleValue());
+        }
+
+        Encoder encoder = Base64.getEncoder();
+
+        return map.entrySet().stream().map(item -> {
+            int timestamp = item.getKey();
+            double value = item.getValue();
+
+            String amountId = encoder.encodeToString(
+                ("TimestampedAmount:" + value + "_" + Currency.USD + "_" + timestamp).getBytes()
+            );
+
+            TimestampedAmount amount = new TimestampedAmount() {
+                {
+                    setId(amountId);
+                    setCurrency(Currency.USD);
+                    setValue(value);
+                    setTimestamp((int)timestamp);
+                }
+            };
+
+            return amount;
+        }).toList();
+    }
 
     /**
      * 按月汇总
@@ -45,8 +169,8 @@ public class HistoricalProtocolVolumeService {
         List<UniswapDayData> list = uniswapDayDataSubgraphFetcher.dayDataList(
                 null,
                 null,
-                null,
-                null,
+                UniswapDayData_orderBy.date,
+                OrderDirection.desc,
                 null);
 
         if (list == null) {

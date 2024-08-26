@@ -32,7 +32,7 @@ import com.netflix.graphql.dgs.client.GraphQLResponse;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 
 @Service
-public class TokenMarketSubgraphFetcher {
+public class TokenPriceSubgraphFetcher {
   @Autowired
   SubgraphsClient subgraphsClient;
 
@@ -317,7 +317,11 @@ public class TokenMarketSubgraphFetcher {
     TokenMinuteDatasProjectionRoot<?, ?> tokenMinuteDatasProjection = new TokenMinuteDatasProjectionRoot<>()
       .id()
       .periodStartUnix()
-      .priceUSD();
+      .priceUSD()
+      .close()
+      .open()
+      .high()
+      .low();
 
     GraphQLQueryRequest request = new GraphQLQueryRequest(tokenMinuteDatasQuery, tokenMinuteDatasProjection);
     GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
@@ -362,7 +366,11 @@ public class TokenMarketSubgraphFetcher {
     TokenHourDatasProjectionRoot<?, ?> tokenHourDataProjection = new TokenHourDatasProjectionRoot<>()
       .id()
       .periodStartUnix()
-      .priceUSD();
+      .priceUSD()
+      .close()
+      .open()
+      .high()
+      .low();
 
     GraphQLQueryRequest request = new GraphQLQueryRequest(tokenHourDataQuery, tokenHourDataProjection);
     GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
@@ -399,7 +407,11 @@ public class TokenMarketSubgraphFetcher {
     TokenHourDatasProjectionRoot<?, ?> tokenHourDataProjection = new TokenHourDatasProjectionRoot<>()
       .id()
       .periodStartUnix()
-      .priceUSD();
+      .priceUSD()
+      .close()
+      .open()
+      .high()
+      .low();
 
     GraphQLQueryRequest request = new GraphQLQueryRequest(tokenHourDataQuery, tokenHourDataProjection);
     GraphQLResponse response = subgraphsClient.build().executeQuery(request.serialize());
@@ -444,6 +456,10 @@ public class TokenMarketSubgraphFetcher {
     TokenDayDatasProjectionRoot<?, ?> tokenDayDatasProjection = new TokenDayDatasProjectionRoot<>()
       .id()
       .date()
+      .close()
+      .open()
+      .high()
+      .low()
       .priceUSD();
 
     GraphQLQueryRequest request = new GraphQLQueryRequest(tokenDayDatasQuery, tokenDayDatasProjection);

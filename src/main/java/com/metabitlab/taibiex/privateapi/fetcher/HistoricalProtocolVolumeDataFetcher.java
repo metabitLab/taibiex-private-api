@@ -30,14 +30,11 @@ public class HistoricalProtocolVolumeDataFetcher {
             @InputArgument("version") ProtocolVersion protocolVersion,
             @InputArgument HistoryDuration duration) {
         switch (duration) {
-            case DAY:
-                // TODO: 需要实现
-            case WEEK:
-                // TODO: 需要实现
-            case YEAR:
-                // TODO: 需要实现
-                return null;
             case MONTH:
+                return historicalProtocolVolumeService.dayHistoricalProtocolVolume(chain, protocolVersion);
+            case YEAR:
+                return historicalProtocolVolumeService.weekHistoricalProtocolVolume(chain, protocolVersion);
+            case MAX:
                 return historicalProtocolVolumeService.monthHistoricalProtocolVolume(chain, protocolVersion);
             default:
                 throw new UnSupportDurationException("This duration is not supported", duration);

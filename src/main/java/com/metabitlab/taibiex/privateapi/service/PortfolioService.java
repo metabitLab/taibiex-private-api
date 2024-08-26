@@ -133,9 +133,6 @@ public class PortfolioService {
                             }
                         });
 
-                        // TODO: 需要填值，参考文档
-                        // TokenProjectMarket
-
                         return tokenBalance;
                     }).toList();
         } finally {

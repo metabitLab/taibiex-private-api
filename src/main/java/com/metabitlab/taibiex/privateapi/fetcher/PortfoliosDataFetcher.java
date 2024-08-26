@@ -22,12 +22,16 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenBalance;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenProjectMarket;
 import com.metabitlab.taibiex.privateapi.service.PortfolioService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectMarketService;
+import com.metabitlab.taibiex.privateapi.service.TokenService;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsData;
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
+
+import graphql.execution.DataFetcherResult;
+import io.vavr.Tuple2;
 
 /**
  * This class is responsible for fetching portfolios data.
@@ -44,6 +48,9 @@ public class PortfoliosDataFetcher {
 
     @Autowired
     BundleSubgraphFetcher bundleSubgraphFetcher;
+
+    @Autowired
+    TokenService tokenService;
 
 	@DgsQuery
     public List<Portfolio> portfolios(
@@ -98,7 +105,7 @@ public class PortfoliosDataFetcher {
     }
 
     @DgsData(parentType = DgsConstants.TOKENBALANCE.TYPE_NAME)
-    public TokenProjectMarket tokenProjectMarket (
+    public DataFetcherResult<TokenProjectMarket> tokenProjectMarket (
         DgsDataFetchingEnvironment env
     ) {
         TokenBalance tokenBalance = env.getSource();
@@ -107,8 +114,17 @@ public class PortfoliosDataFetcher {
         }
 
         Token token = tokenBalance.getToken();
+        Tuple2<
+            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
+            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
+        > tuple = tokenService
+            .getTokenFromSubgraphs(token.getChain(), token.getAddress());
 
-        return tokenProjectMarketService.getMarketFromToken(token);
+        TokenProjectMarket market = tokenProjectMarketService.getMarketFromToken(token);
+        return DataFetcherResult.<TokenProjectMarket>newResult()
+            .data(market)
+            .localContext(tuple._2)
+            .build();
     }
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME)
