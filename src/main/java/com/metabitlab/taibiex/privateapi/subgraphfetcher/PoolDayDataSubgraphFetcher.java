@@ -53,8 +53,6 @@ public class PoolDayDataSubgraphFetcher {
                 .tick()
                 .token0Price()
                 .token1Price()
-                .feeGrowthGlobal0X128()
-                .feeGrowthGlobal1X128()
                .feesUSD()
                 .liquidity()
                 .sqrtPrice();
