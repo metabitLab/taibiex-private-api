@@ -738,9 +738,9 @@ public class TokenDataFetcher {
         return tokenService.topTokens(chain, page, pageSize, orderBy);
     }
 
-    /*@DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
-    public List<Token> tokens(@InputArgument List<ContractInput> contractInput) {
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME)
+    public List<Token> tokens(@InputArgument(name = "contracts")  List<ContractInput> contractInput) {
         return tokenService.tokens(contractInput);
-    }*/
+    }
 
 }
