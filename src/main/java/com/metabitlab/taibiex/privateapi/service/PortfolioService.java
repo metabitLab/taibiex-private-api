@@ -13,6 +13,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson2.JSONArray;
@@ -39,6 +40,9 @@ public class PortfolioService {
 
     @Autowired
     TokenService tokenService;
+
+    @Value("${tabiscan.api-domain.url}")
+    private String tabiscanApiDomain;
 
     public List<Portfolio> portfolios(
             List<String> ownerAddresses,
@@ -67,7 +71,8 @@ public class PortfolioService {
         // - tokenProjectMarket
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpGet request = new HttpGet(String.format(
-                "https://testnet-api2.tabiscan.com/api/v2/addresses/%s/token-balances",
+                "%s/api/v2/addresses/%s/token-balances",
+                tabiscanApiDomain,
                 ownerAddress));
 
         CloseableHttpResponse response = null;
