@@ -62,13 +62,13 @@ public class PortfoliosDataFetcher {
     ) {
         // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
         if (chains.size() > 1 || chains.get(0) != TABI) {
-            throw new UnSupportChainException("Only the chain TABI is supported", chains);
+            throw new UnSupportChainException("Those chains are not supported", chains);
         }
 
         List<Portfolio> portfolios = portfolioService.portfolios(ownerAddresses, chains, valueModifiers);
         return portfolios.stream().map(portfolio -> {
             if (chains.size() > 1 || chains.get(0) != TABI) {
-                throw new UnSupportChainException("Only the chain TABI is supported", chains);
+                throw new UnSupportChainException("Those chains are not supported", chains);
             }
     
             String ownerAddress = portfolio.getOwnerAddress();

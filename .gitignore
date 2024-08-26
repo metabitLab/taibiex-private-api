@@ -41,3 +41,6 @@ mysql.conf.d/
 
 ### Server ###
 *.pem
+
+### MacOS ###
+.DS_Store
