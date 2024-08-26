@@ -23,7 +23,7 @@ public class V3TransactionsDataFetcher {
     @Autowired
     TransactionsSubgraphFetcher transactionsSubgraphFetcher;
 
-    private final Chain TABI = Chain.TABI;
+    private final Chain TABI = Chain.ETHEREUM;
 
     @DgsQuery
     public List<PoolTransaction> v3Transactions(

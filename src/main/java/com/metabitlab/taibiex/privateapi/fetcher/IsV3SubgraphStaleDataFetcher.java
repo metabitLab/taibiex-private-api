@@ -21,6 +21,8 @@ public class IsV3SubgraphStaleDataFetcher {
     @Autowired
     BundleSubgraphFetcher bundleSubgraphFetcher;
 
+    private final static Chain TABI = Chain.ETHEREUM;
+
     @DgsQuery
     public Boolean isV3SubgraphStale(
         @InputArgument Chain chain
@@ -28,7 +30,7 @@ public class IsV3SubgraphStaleDataFetcher {
         if (chain == null) {
             throw new IllegalArgumentException("Chain is required");
         }
-        if (chain != Chain.TABI) {
+        if (chain != TABI) {
             throw new UnSupportChainException("Chain is not supported", Arrays.asList(chain));
         }
 

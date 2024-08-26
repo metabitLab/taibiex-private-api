@@ -52,6 +52,8 @@ public class PortfoliosDataFetcher {
     @Autowired
     TokenService tokenService;
 
+    private final static Chain TABI = Chain.ETHEREUM;
+
 	@DgsQuery
     public List<Portfolio> portfolios(
         @InputArgument List<String> ownerAddresses,
@@ -59,13 +61,13 @@ public class PortfoliosDataFetcher {
         @InputArgument List<PortfolioValueModifier> valueModifiers
     ) {
         // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
-        if (chains.size() > 1 || chains.get(0) != Chain.TABI) {
+        if (chains.size() > 1 || chains.get(0) != TABI) {
             throw new UnSupportChainException("Only the chain TABI is supported", chains);
         }
 
         List<Portfolio> portfolios = portfolioService.portfolios(ownerAddresses, chains, valueModifiers);
         return portfolios.stream().map(portfolio -> {
-            if (chains.size() > 1 || chains.get(0) != Chain.TABI) {
+            if (chains.size() > 1 || chains.get(0) != TABI) {
                 throw new UnSupportChainException("Only the chain TABI is supported", chains);
             }
     

@@ -25,6 +25,7 @@ import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
 import com.metabitlab.taibiex.privateapi.errors.MissLocalContextException;
 import com.metabitlab.taibiex.privateapi.errors.MissSourceException;
 import com.metabitlab.taibiex.privateapi.errors.MissVariableException;
+import com.metabitlab.taibiex.privateapi.errors.UnSupportChainException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
@@ -54,7 +55,7 @@ public class TokenDataFetcher {
         this.tokenMarketService = tokenMarketService;
     }
 
-    private final Chain TABI = Chain.TABI;
+    private final Chain TABI = Chain.ETHEREUM;
 
     @Autowired
     TokenProjectMarketService tokenProjectMarketService;
@@ -75,6 +76,9 @@ public class TokenDataFetcher {
     public DataFetcherResult<Token> token(@InputArgument Chain chain,
             @InputArgument String address) {
         // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
+        if (chain != TABI) {
+            throw new UnSupportChainException("those chains are not supported", Arrays.asList(chain));
+        }
 
         Tuple2<
             com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 

@@ -14,6 +14,8 @@ import io.vavr.Tuple2;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.Base64.Encoder;
 
@@ -23,12 +25,13 @@ public class TokenService {
   private final TokenSubgraphFetcher tokenSubgraphFetcher;
   private final TokenProjectRepository tokenProjectRepository;
 
+    private final static Chain TABI = Chain.ETHEREUM;
+
     public TokenService(TokenSubgraphFetcher tokenSubgraphFetcher,
                         TokenProjectRepository tokenProjectRepository) {
         this.tokenSubgraphFetcher = tokenSubgraphFetcher;
         this.tokenProjectRepository = tokenProjectRepository;
     }
-
 
     public List<Token> topTokens(Chain chain, Integer page, Integer pageSize, TokenSortableField orderBy) {
 
@@ -46,7 +49,7 @@ public class TokenService {
             Token token = CGlibMapper.mapper(subGraphToken, Token.class);
             token.setAddress(subGraphToken.getId());
             token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
-            token.setChain(Chain.TABI);
+            token.setChain(TABI);
             token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
 
             /*TokenProjectEntity projectEntity = tokenProjectRepository.findByAddress(subGraphToken.getId());
@@ -77,7 +80,7 @@ public class TokenService {
             Token token = CGlibMapper.mapper(subGraphToken, Token.class);
             token.setAddress(subGraphToken.getId());
             token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
-            token.setChain(Chain.TABI);
+            token.setChain(TABI);
             token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
             token.setDecimals(subGraphToken.getDecimals().intValue());
             tokenList.add(token);
@@ -94,15 +97,25 @@ public class TokenService {
         Token token = CGlibMapper.mapper(subGraphToken, Token.class);
         token.setAddress(subGraphToken.getId());
         token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
-        token.setChain(Chain.TABI);
+        token.setChain(TABI);
         token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
         return token;
     }
 
     public Tuple2<com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> getTokenFromSubgraphs(
-            Chain chain, String address) {
-        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = tokenSubgraphFetcher
-                .token(address);
+                Chain chain, String address) {
+        final com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t;
+
+        if (address == null) {
+            // NOTE: 当 Token 的地址为 null 时, 如何获取主网币的信息
+            t = tokenSubgraphFetcher.token("0x6290b1db448306a4422a78c28a52e30fee68cf76");
+        } else {
+            t = tokenSubgraphFetcher.token(address.toLowerCase());
+        }
+
+        if (t == null) {
+            throw new RuntimeException(String.format("Token (%s %s) is not found", address, chain));
+        }
 
         Encoder encoder = Base64.getEncoder();
 
