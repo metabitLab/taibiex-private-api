@@ -74,7 +74,7 @@ public class TokenDataFetcher {
     @DgsQuery
     public DataFetcherResult<Token> token(@InputArgument Chain chain,
             @InputArgument String address) {
-        // NOTE: 忽略了 chain 参数, 目前仅支持单链 TABI
+        // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
 
         Tuple2<
             com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
@@ -103,7 +103,6 @@ public class TokenDataFetcher {
     public List<PoolTransaction> v3Transactions(@InputArgument Integer first,
             @InputArgument("timestampCursor") Integer cursor,
             DgsDataFetchingEnvironment env) {
-        // NOTE: 目前仅支持单链 TABI
         Token token = env.getSource();
         if (token == null) {
             throw new MissSourceException("Token is required", "token");
@@ -191,7 +190,7 @@ public class TokenDataFetcher {
 
         Bundle bundle = bundleSubgraphFetcher.bundle();
 
-        // NOTE: 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
+        // NOTE: [已确认] 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
 
         BigDecimal price = token.getDerivedETH().multiply(bundle.getEthPriceUSD());
         BigInteger totalSupply = token.getTotalSupply();

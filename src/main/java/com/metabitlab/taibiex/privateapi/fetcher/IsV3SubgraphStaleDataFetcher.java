@@ -32,11 +32,11 @@ public class IsV3SubgraphStaleDataFetcher {
             throw new UnSupportChainException("Chain is not supported", Arrays.asList(chain));
         }
 
-        // NOTE: 参数 chain 未使用，目前仅支持 TABI
+        // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
 
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle bundle = bundleSubgraphFetcher.bundle();
 
-        // NOTE: 如果 bundle 不为空，则为 true
+        // NOTE: [已确认] 如果 bundle 不为空，则为 true
         return bundle != null;
     }
 }

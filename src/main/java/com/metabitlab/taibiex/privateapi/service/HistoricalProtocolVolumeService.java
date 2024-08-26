@@ -39,7 +39,8 @@ public class HistoricalProtocolVolumeService {
     public List<TimestampedAmount> monthHistoricalProtocolVolume(
             Chain chain,
             ProtocolVersion protocolVersion) {
-        // NOTE: 参数未使用
+        // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
+        // NOTE: [已确认] protocolVersion 参数未使用, 仅支持 V3
 
         List<UniswapDayData> list = uniswapDayDataSubgraphFetcher.dayDataList(
                 null,
@@ -84,7 +85,7 @@ public class HistoricalProtocolVolumeService {
                 total = 0.0;
             }
 
-            // NOTE: 汇总逻辑: 累积求和
+            // 汇总逻辑: 累积求和
             map.put(key, total + item.getTvlUSD().doubleValue());
         }
 

@@ -76,7 +76,7 @@ public class V3PoolDataFetcher {
         Chain chain = pool.getChain();
         String address = pool.getAddress();
 
-        // NOTE: 将 V3Pool 的地址作为 Subgraphs 中 Pool 的 ID 使用
+        // 将 V3Pool 的地址作为 Subgraphs 中 Pool 的 ID 使用
         List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, chain, address);
         List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, chain, address);
         List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, chain, address);

@@ -51,7 +51,7 @@ public class PortfoliosDataFetcher {
         @InputArgument List<Chain> chains,
         @InputArgument List<PortfolioValueModifier> valueModifiers
     ) {
-        // NOTE: 目前只支持 TABI 链
+        // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
         if (chains.size() > 1 || chains.get(0) != Chain.TABI) {
             throw new UnSupportChainException("Only the chain TABI is supported", chains);
         }

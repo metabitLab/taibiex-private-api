@@ -118,9 +118,9 @@ public class TokenService {
                 setName(t.getName());
                 setSymbol(t.getSymbol());
                 setDecimals(t.getDecimals().intValue());
-                // TODO: 以下字段需要填值
+                // NOTE: [已确认] 从 Subgraphs 的 Token 中获取, 暂时可以不关心
                 setFeeData(null);
-                // NOTE: 不支持 V2Transactions
+                // NOTE: [已确认] 不支持 V2Transactions
                 setV2Transactions(null);
             }
         };

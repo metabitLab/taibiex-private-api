@@ -63,7 +63,7 @@ public class PortfolioService {
     }
 
     public List<TokenBalance> tokenBalances(String ownerAddress, Chain chain) throws IOException {
-        // NOTE: 返回 TokenBalance 的五个字段
+        // 返回 TokenBalance 的五个字段
         // - id
         // - quantity 持有的代表数量
         // - denominatedValue 代表的 USD 价值
@@ -98,7 +98,7 @@ public class PortfolioService {
             Encoder encoder = Base64.getEncoder();
 
             return balances.stream()
-                    // NOTE: 过滤掉没有 decimals 的代币，比如 NFT
+                    // NOTE: [已确认] 过滤掉没有 decimals 的代币，比如 NFT
                     .filter(item -> item.token.decimals != null)
                     .map(item -> {
 
@@ -133,7 +133,7 @@ public class PortfolioService {
                             }
                         });
 
-                        // NOTE: 以下字段由其他 dgsDataFetcher 填充
+                        // TODO: 需要填值，参考文档
                         // TokenProjectMarket
 
                         return tokenBalance;

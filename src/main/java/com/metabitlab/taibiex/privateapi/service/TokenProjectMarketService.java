@@ -65,8 +65,6 @@ public class TokenProjectMarketService {
                 setId(projectMarketId);
                 setTokenProject(project);
                 setCurrency(Currency.USD);
-                // NOTE: 市场的价格百分比变化
-                // pricePercentChange
 
                 setPrice(new Amount() {
                     {
@@ -75,7 +73,8 @@ public class TokenProjectMarketService {
                         setValue(price.doubleValue());
                     }
                 });
-                // // TODO: 以下字段需要填值
+                // // TODO: 需要填值，参考文档
+                // setPricePercentChange(null);
                 // setPricePercentChange24h(null);
                 // setPriceHigh52w(null);
                 // setPriceLow52w(null);
