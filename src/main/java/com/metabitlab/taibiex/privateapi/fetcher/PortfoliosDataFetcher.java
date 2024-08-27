@@ -107,7 +107,7 @@ public class PortfoliosDataFetcher {
     }
 
     @DgsData(parentType = DgsConstants.TOKENBALANCE.TYPE_NAME)
-    public DataFetcherResult<TokenProjectMarket> tokenProjectMarket (
+    public TokenProjectMarket tokenProjectMarket (
         DgsDataFetchingEnvironment env
     ) {
         TokenBalance tokenBalance = env.getSource();
@@ -116,17 +116,13 @@ public class PortfoliosDataFetcher {
         }
 
         Token token = tokenBalance.getToken();
-        Tuple2<
-            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
-            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
-        > tuple = tokenService
-            .getTokenFromSubgraphs(token.getChain(), token.getAddress());
+        if (token == null) {
+            throw new MissSourceException("Token is required", "token");
+        }
 
         TokenProjectMarket market = tokenProjectMarketService.getMarketFromToken(token);
-        return DataFetcherResult.<TokenProjectMarket>newResult()
-            .data(market)
-            .localContext(tuple._2)
-            .build();
+
+        return market;
     }
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME)

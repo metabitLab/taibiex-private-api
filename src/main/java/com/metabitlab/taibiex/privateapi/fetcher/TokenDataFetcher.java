@@ -72,7 +72,7 @@ public class TokenDataFetcher {
     TransactionsSubgraphFetcher transactionsSubgraphFetcher;
 
     @DgsQuery
-    public DataFetcherResult<Token> token(@InputArgument Chain chain,
+    public Token token(@InputArgument Chain chain,
             @InputArgument String address) {
         // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI 
         if (chain != TABI) {
@@ -85,10 +85,7 @@ public class TokenDataFetcher {
         > tuple = tokenService
                 .getTokenFromSubgraphs(TABI, address);
 
-        return DataFetcherResult.<Token>newResult()
-                .data(tuple._1)
-                .localContext(tuple._2)
-                .build();
+        return tuple._1;
     }
 
     @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Market)
@@ -97,7 +94,7 @@ public class TokenDataFetcher {
             throw new UnSupportCurrencyException("This currency is not supported", Arrays.asList(currency));
         }
 
-        com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t = env.getSource();
+        Token t = env.getSource();
 
         return tokenMarketService.tokenMarket(t, currency);
     }
@@ -186,17 +183,33 @@ public class TokenDataFetcher {
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME, field = DgsConstants.TOKENPROJECTMARKET.MarketCap)
     public Amount marketCap(DgsDataFetchingEnvironment env) {
-        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = env.getLocalContext();
-        if (token == null) {
-            throw new MissLocalContextException("Token is required", "token");
+        TokenProjectMarket tokenProjectMarket = env.getSource();
+        if (tokenProjectMarket == null) {
+            throw new MissSourceException("TokenProjectMarket is required", "tokenProjectMarket");
         }
+
+        List<Token> tokens = tokenProjectMarket.getTokenProject().getTokens();
+        if (tokens == null || tokens.size() == 0) {
+            throw new MissSourceException("Tokens is required", "tokens");
+        }
+
+        Token token = tokenProjectMarket.getTokenProject().getTokens().get(0);
+        if (token == null) {
+            throw new MissSourceException("Token is required", "token");
+        }
+
+        Tuple2<
+            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token,
+            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
+        > tuple = tokenService
+                .getTokenFromSubgraphs(token.getChain(), token.getAddress());
 
         Bundle bundle = bundleSubgraphFetcher.bundle();
 
         // NOTE: [已确认] 此处存疑，如果采用 totalSupply 作为流通量，那么市值计算方式与 fullyDilutedValuation 一致
 
-        BigDecimal price = token.getDerivedETH().multiply(bundle.getEthPriceUSD());
-        BigInteger totalSupply = token.getTotalSupply();
+        BigDecimal price = tuple._2.getDerivedETH().multiply(bundle.getEthPriceUSD());
+        BigInteger totalSupply = tuple._2.getTotalSupply();
 
         double marketCap = totalSupply.intValue() * price.doubleValue();
 
@@ -215,15 +228,31 @@ public class TokenDataFetcher {
 
     @DgsData(parentType = DgsConstants.TOKENPROJECTMARKET.TYPE_NAME, field = DgsConstants.TOKENPROJECTMARKET.FullyDilutedValuation)
     public Amount fullyDilutedValuation(DgsDataFetchingEnvironment env) {
-        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token token = env.getLocalContext();
-        if (token == null) {
-            throw new MissLocalContextException("Token is required", "token");
+        TokenProjectMarket tokenProjectMarket = env.getSource();
+        if (tokenProjectMarket == null) {
+            throw new MissSourceException("TokenProjectMarket is required", "tokenProjectMarket");
         }
+
+        List<Token> tokens = tokenProjectMarket.getTokenProject().getTokens();
+        if (tokens == null || tokens.size() == 0) {
+            throw new MissSourceException("Tokens is required", "tokens");
+        }
+
+        Token token = tokenProjectMarket.getTokenProject().getTokens().get(0);
+        if (token == null) {
+            throw new MissSourceException("Tokens is required", "tokens");
+        }
+
+        Tuple2<
+            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
+            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
+        > tuple = tokenService
+                .getTokenFromSubgraphs(token.getChain(), token.getAddress());
 
         Bundle bundle = bundleSubgraphFetcher.bundle();
 
-        BigDecimal price = token.getDerivedETH().multiply(bundle.getEthPriceUSD());
-        BigInteger totalSupply = token.getTotalSupply();
+        BigDecimal price = tuple._2.getDerivedETH().multiply(bundle.getEthPriceUSD());
+        BigInteger totalSupply = tuple._2.getTotalSupply();
 
         double fullyDilutedValuation = totalSupply.intValue() * price.doubleValue();
 
@@ -257,17 +286,29 @@ public class TokenDataFetcher {
     @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.Ohlc)
     public List<TimestampedOhlc> ohlc(@InputArgument HistoryDuration duration,
             DgsDataFetchingEnvironment env) {
-        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = env.getLocalContext();
-        if (t == null) {
-            throw new MissLocalContextException("Token is required", "token");
+        TokenMarket tokenMarket = env.getSource();
+        if (tokenMarket == null) {
+            throw new MissSourceException("TokenMarket is required", "tokenMarket");
         }
+
+        Token token = tokenMarket.getToken();
+        if (token == null) {
+            throw new MissSourceException("Token is required", "token");
+        }
+
+        Tuple2<
+            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
+            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
+        > tuple = tokenService
+                .getTokenFromSubgraphs(token.getChain(), token.getAddress());
+
 
         Encoder encoder = Base64.getEncoder();
 
         List<TimestampedOhlc> ohlcList = null;
         switch (duration) {
             case DAY:
-                ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::dayOhlcByTokenId, item -> {
+                ohlcList = fetchOhlc(duration, tuple._2.getId(), tokenMarketSubgraphFetcher::dayOhlcByTokenId, item -> {
                     String ohlcId = encoder.encodeToString(
                             ("TimestampedOhlc:" + item.getPeriodStartUnix()
                                     + "_" + item.getOpen()
@@ -321,7 +362,7 @@ public class TokenDataFetcher {
 
                 break;
             case HOUR:
-                ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::hourOhlcByTokenId, item -> {
+                ohlcList = fetchOhlc(duration, tuple._2.getId(), tokenMarketSubgraphFetcher::hourOhlcByTokenId, item -> {
                     String ohlcId = encoder.encodeToString(
                             ("TimestampedOhlc:" + item.getPeriodStartUnix()
                                     + "_" + item.getOpen()
@@ -375,7 +416,7 @@ public class TokenDataFetcher {
 
                 break;
             case WEEK:
-                ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::weekOhlcByTokenId, item -> {
+                ohlcList = fetchOhlc(duration, tuple._2.getId(), tokenMarketSubgraphFetcher::weekOhlcByTokenId, item -> {
                     String ohlcId = encoder.encodeToString(
                             ("TimestampedOhlc:" + item.getPeriodStartUnix()
                                     + "_" + item.getOpen()
@@ -429,7 +470,7 @@ public class TokenDataFetcher {
 
                 break;
             case MONTH:
-                ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::monthOhlcByTokenId, item -> {
+                ohlcList = fetchOhlc(duration, tuple._2.getId(), tokenMarketSubgraphFetcher::monthOhlcByTokenId, item -> {
                     String ohlcId = encoder.encodeToString(
                             ("TimestampedOhlc:" + item.getPeriodStartUnix()
                                     + "_" + item.getOpen()
@@ -483,7 +524,7 @@ public class TokenDataFetcher {
 
                 break;
             case YEAR:
-                ohlcList = fetchOhlc(duration, t.getId(), tokenMarketSubgraphFetcher::yearOhlcByTokenId, item -> {
+                ohlcList = fetchOhlc(duration, tuple._2.getId(), tokenMarketSubgraphFetcher::yearOhlcByTokenId, item -> {
                     String ohlcId = encoder.encodeToString(
                             ("TimestampedOhlc:" + item.getDate()
                                     + "_" + item.getOpen()
@@ -560,15 +601,26 @@ public class TokenDataFetcher {
     @DgsData(parentType = DgsConstants.TOKENMARKET.TYPE_NAME, field = DgsConstants.TOKENMARKET.PriceHistory)
     public List<TimestampedAmount> priceHistory(@InputArgument HistoryDuration duration,
             DgsDataFetchingEnvironment env) {
-        com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t = env.getLocalContext();
-        if (t == null) {
-            throw new MissLocalContextException("Token is required", "token");
+        TokenMarket tokenMarket = env.getSource();
+        if (tokenMarket == null) {
+            throw new MissSourceException("TokenMarket is required", "tokenMarket");
         }
+
+        Token token = tokenMarket.getToken();
+        if (token == null) {
+            throw new MissSourceException("Token is required", "token");
+        }
+
+        Tuple2<
+            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
+            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
+        > tuple = tokenService
+            .getTokenFromSubgraphs(token.getChain(), token.getAddress());
 
         Encoder encoder = Base64.getEncoder();
 
         List<TimestampedAmount> history = null;
-        String tokenId = t.getId();
+        String tokenId = tuple._2.getId();
 
         switch (duration) {
             case DAY:
