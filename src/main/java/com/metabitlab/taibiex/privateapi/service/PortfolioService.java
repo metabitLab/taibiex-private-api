@@ -24,6 +24,9 @@ import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Portfolio;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.PortfolioValueModifier;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.TokenBalance;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
+import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 import com.metabitlab.taibiex.privateapi.util.Constants;
 
 import io.vavr.Tuple2;
@@ -37,6 +40,9 @@ import io.vavr.Tuple2;
 public class PortfolioService {
     @Autowired
     BundleSubgraphFetcher bundleSubgraphFetcher;
+
+    @Autowired
+    TokenSubgraphFetcher tokenSubgraphFetcher;
 
     @Autowired
     TokenService tokenService;
@@ -63,6 +69,10 @@ public class PortfolioService {
     }
 
     public List<TokenBalance> tokenBalances(String ownerAddress, Chain chain) throws IOException {
+        // 获取已支持的币种
+        List<com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> whitelist = tokenSubgraphFetcher
+                .tokens(0, 100, Token_orderBy.volume, OrderDirection.desc, null);
+
         // 返回 TokenBalance 的五个字段
         // - id
         // - quantity 持有的代表数量
@@ -100,19 +110,19 @@ public class PortfolioService {
             return balances.stream()
                     // NOTE: [已确认] 过滤掉没有 decimals 的代币，比如 NFT
                     .filter(item -> item.token.decimals != null)
+                    // NOTE: [已确认] 过滤掉 Pool 中没有的代币
+                    .filter(item -> whitelist.stream().anyMatch(token -> token.getId().toLowerCase().equals(item.token.address.toLowerCase())))
                     .map(item -> {
 
                         Double quantify = Double.parseDouble(item.value)
                                 / Math.pow(10, Double.parseDouble(item.token.decimals));
 
-                        Tuple2<
-                            com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
-                            com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
-                        > tuple = tokenService
+                        Tuple2<com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> tuple = tokenService
                                 .getTokenFromSubgraphs(chain, item.token.address);
 
                         BigDecimal derivedETH = tuple._2.getDerivedETH();
-                        double denominatedValue = derivedETH.multiply(ethPriceUSD).multiply(BigDecimal.valueOf(quantify)).doubleValue();
+                        double denominatedValue = derivedETH.multiply(ethPriceUSD)
+                                .multiply(BigDecimal.valueOf(quantify)).doubleValue();
 
                         String tokenId = encoder.encodeToString(
                                 ("Token:" + chain + "_" + item.token.address).getBytes());
