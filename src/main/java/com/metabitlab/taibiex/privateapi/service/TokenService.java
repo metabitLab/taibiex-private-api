@@ -22,8 +22,8 @@ import java.util.Base64.Encoder;
 @Service
 public class TokenService {
 
-  private final TokenSubgraphFetcher tokenSubgraphFetcher;
-  private final TokenProjectRepository tokenProjectRepository;
+    private final TokenSubgraphFetcher tokenSubgraphFetcher;
+    private final TokenProjectRepository tokenProjectRepository;
 
     private final static Chain TABI = Chain.ETHEREUM;
 

@@ -5,10 +5,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.WeekFields;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Base64;
@@ -25,9 +23,6 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.UniswapDayDataSubgraphF
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.UniswapDayData;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.UniswapDayData_orderBy;
-
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 
 /**
  * This class provides historical protocol volume service.
