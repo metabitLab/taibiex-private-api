@@ -39,6 +39,10 @@ logs
 mysql-data/
 mysql.conf.d/
 
+### Redis ###
+redis-data/
+redis.conf.d/
+
 ### Server ###
 *.pem
 
