@@ -24,7 +24,7 @@ public class RedisServiceImpl implements RedisService {
         redisTemplate.opsForValue().set(key, value, time, TimeUnit.SECONDS);
     }
 
-    public void set(String key, String value, long time, TimeUnit unit) {
+    public void set(String key, Object value, long time, TimeUnit unit) {
         redisTemplate.opsForValue().set(key, value, time, unit);
     }
 

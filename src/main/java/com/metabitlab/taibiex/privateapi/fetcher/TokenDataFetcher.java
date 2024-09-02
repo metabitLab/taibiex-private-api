@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Encoder;
+import java.util.concurrent.TimeUnit;
 
 import com.metabitlab.taibiex.privateapi.service.TokenService;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
@@ -21,9 +22,10 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenPriceSubgraphFetch
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
-import com.metabitlab.taibiex.privateapi.errors.MissLocalContextException;
+import com.metabitlab.taibiex.privateapi.util.RedisService;
 import com.metabitlab.taibiex.privateapi.errors.MissSourceException;
 import com.metabitlab.taibiex.privateapi.errors.MissVariableException;
+import com.metabitlab.taibiex.privateapi.errors.ParseCacheException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportChainException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportCurrencyException;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
@@ -34,7 +36,6 @@ import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 
-import graphql.execution.DataFetcherResult;
 import io.vavr.Tuple2;
 
 @DgsComponent
@@ -70,6 +71,9 @@ public class TokenDataFetcher {
 
     @Autowired
     TransactionsSubgraphFetcher transactionsSubgraphFetcher;
+
+    @Autowired
+    RedisService redisService;
 
     @DgsQuery
     public Token token(@InputArgument Chain chain,
@@ -139,8 +143,19 @@ public class TokenDataFetcher {
     @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Project)
     public TokenProject project(DgsDataFetchingEnvironment env) {
         com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t = env.getSource();
+        try {
+            Object wrappedTokenProject = redisService.get(t.getId());
+            if (wrappedTokenProject != null) {
+                return (TokenProject) wrappedTokenProject;
+            }
 
-        return tokenProjectService.findByAddress(t);
+            TokenProject tokenProject = tokenProjectService.findByAddress(t);
+            redisService.set(t.getId(), tokenProject, 20, TimeUnit.MINUTES);
+
+            return tokenProject;
+        } catch (Exception e) {
+            throw new ParseCacheException("Error parsing cache", t.getId());
+        }
     }
 
     @DgsData(parentType = DgsConstants.TOKENPROJECT.TYPE_NAME, field = DgsConstants.TOKENPROJECT.Markets)

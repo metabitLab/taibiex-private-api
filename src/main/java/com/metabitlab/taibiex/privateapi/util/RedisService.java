@@ -26,7 +26,7 @@ public interface RedisService {
      * @param time
      * @param unit
      */
-    void set(String key, String value, long time, TimeUnit unit);
+    void set(String key, Object value, long time, TimeUnit unit);
 
     /**
      * set

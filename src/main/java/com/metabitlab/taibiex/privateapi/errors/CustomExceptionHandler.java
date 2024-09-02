@@ -152,6 +152,21 @@ public class CustomExceptionHandler implements DataFetcherExceptionHandler {
             return CompletableFuture.completedFuture(result);
         }
 
+        if (exception instanceof ParseCacheException) {
+            debugInfo.put("Cache Key", ((ParseCacheException) exception).getCacheKey());
+
+            TypedGraphQLError graphqlError = TypedGraphQLError.newInternalErrorBuilder()
+                    .message("privateapi exception: " + exception.getMessage())
+                    .debugInfo(debugInfo)
+                    .path(handlerParameters.getPath()).build();
+
+            DataFetcherExceptionHandlerResult result = DataFetcherExceptionHandlerResult.newResult()
+                    .error(graphqlError)
+                    .build();
+
+            return CompletableFuture.completedFuture(result);
+        }
+
         return defaultHandler.handleException(handlerParameters);
     }
 }
