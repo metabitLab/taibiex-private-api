@@ -143,14 +143,18 @@ public class TokenDataFetcher {
     @DgsData(parentType = DgsConstants.TOKEN.TYPE_NAME, field = DgsConstants.TOKEN.Project)
     public TokenProject project(DgsDataFetchingEnvironment env) {
         com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token t = env.getSource();
+        if (t == null) {
+            throw new MissSourceException("Token is required", "token");
+        }
+
         try {
-            Object wrappedTokenProject = redisService.get(t.getId());
+            Object wrappedTokenProject = redisService.get("TokenProject:" + t.getId());
             if (wrappedTokenProject != null) {
                 return (TokenProject) wrappedTokenProject;
             }
 
             TokenProject tokenProject = tokenProjectService.findByAddress(t);
-            redisService.set(t.getId(), tokenProject, 20, TimeUnit.MINUTES);
+            redisService.set("TokenProject:" + t.getId(), tokenProject, 20, TimeUnit.MINUTES);
 
             return tokenProject;
         } catch (Exception e) {
