@@ -23,6 +23,7 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
 import com.metabitlab.taibiex.privateapi.util.RedisService;
+import com.alibaba.fastjson2.JSON;
 import com.metabitlab.taibiex.privateapi.errors.MissSourceException;
 import com.metabitlab.taibiex.privateapi.errors.MissVariableException;
 import com.metabitlab.taibiex.privateapi.errors.ParseCacheException;
@@ -56,6 +57,11 @@ public class TokenDataFetcher {
     }
 
     private final Chain TABI = Chain.ETHEREUM;
+
+    /**
+     * The time-to-live for the token cache in minutes.
+     */
+    private final int TTL_CACHE_TOKEN = 20;
 
     @Autowired
     TokenProjectMarketService tokenProjectMarketService;
@@ -147,18 +153,20 @@ public class TokenDataFetcher {
             throw new MissSourceException("Token is required", "token");
         }
 
+        final String cacheKey = "TokenProject:" + t.getId();
+
         try {
-            Object wrappedTokenProject = redisService.get("TokenProject:" + t.getId());
+            Object wrappedTokenProject = redisService.get(cacheKey);
             if (wrappedTokenProject != null) {
-                return (TokenProject) wrappedTokenProject;
+                return JSON.parseObject((String) wrappedTokenProject, TokenProject.class);
             }
 
             TokenProject tokenProject = tokenProjectService.findByAddress(t);
-            redisService.set("TokenProject:" + t.getId(), tokenProject, 20, TimeUnit.MINUTES);
+            redisService.set(cacheKey, JSON.toJSONString(tokenProject), TTL_CACHE_TOKEN, TimeUnit.MINUTES);
 
             return tokenProject;
         } catch (Exception e) {
-            throw new ParseCacheException("Error parsing cache", t.getId());
+            throw new ParseCacheException("Error parsing cache with Token ID", t.getId());
         }
     }
 
