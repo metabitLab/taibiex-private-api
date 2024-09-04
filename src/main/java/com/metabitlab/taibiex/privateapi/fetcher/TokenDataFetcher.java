@@ -3,10 +3,14 @@ package com.metabitlab.taibiex.privateapi.fetcher;
 import java.util.List;
 import java.util.function.Function;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.TokenMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectMarketService;
 import com.metabitlab.taibiex.privateapi.service.TokenProjectService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
@@ -38,6 +42,7 @@ import com.netflix.graphql.dgs.InputArgument;
 
 import io.vavr.Tuple2;
 
+@Log4j2
 @DgsComponent
 public class TokenDataFetcher {
 
@@ -83,12 +88,28 @@ public class TokenDataFetcher {
             throw new UnSupportChainException("Those chains are not supported", Arrays.asList(chain));
         }
 
+        String cacheKey = "token:" + chain + ":" + address;
+        try {
+            Object topTokens = redisService.get(cacheKey);
+            if (null != topTokens) {
+                return JSONObject.parseObject(topTokens.toString(), Token.class);
+            }
+        } catch (Exception e) {
+            log.error("token redis read error：{}", e.fillInStackTrace());
+        }
+
         Tuple2<
             com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, 
             com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token
         > tuple = tokenService
                 .getTokenFromSubgraphs(TABI, address);
 
+        try {
+            String pvoStr = JSON.toJSONString(tuple._1, SerializerFeature.WriteNullStringAsEmpty);
+            redisService.set(cacheKey, pvoStr, 1, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("token redis write error：{}", e.fillInStackTrace());
+        }
         return tuple._1;
     }
 

@@ -1,39 +1,54 @@
 package com.metabitlab.taibiex.privateapi.service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.mapper.CGlibMapper;
-import com.metabitlab.taibiex.privateapi.repository.TokenProjectRepository;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDirection;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 
+import com.metabitlab.taibiex.privateapi.util.RedisService;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.*;
 import java.util.Base64.Encoder;
+import java.util.concurrent.TimeUnit;
 
+@Log4j2
 @Service
 public class TokenService {
 
     private final TokenSubgraphFetcher tokenSubgraphFetcher;
-    private final TokenProjectRepository tokenProjectRepository;
+
+    private final RedisService redisService;
 
     private final static Chain TABI = Chain.ETHEREUM;
 
-    public TokenService(TokenSubgraphFetcher tokenSubgraphFetcher,
-                        TokenProjectRepository tokenProjectRepository) {
+    public TokenService(TokenSubgraphFetcher tokenSubgraphFetcher, RedisService redisService) {
         this.tokenSubgraphFetcher = tokenSubgraphFetcher;
-        this.tokenProjectRepository = tokenProjectRepository;
+        this.redisService = redisService;
     }
 
     public List<Token> topTokens(Chain chain, Integer page, Integer pageSize, TokenSortableField orderBy) {
+
+        String cacheKey = "topTokens_" + chain + "_" + page + "_" + pageSize + "_" + orderBy;
+
+        try {
+            Object topTokens = redisService.get(cacheKey);
+            if (null != topTokens) {
+                return JSONObject.parseArray(topTokens.toString(), Token.class);
+            }
+        } catch (Exception e) {
+            log.error("topTokens redis read error：{}", e.fillInStackTrace());
+        }
 
         if (null == orderBy){
             orderBy = TokenSortableField.VOLUME;
@@ -66,6 +81,12 @@ public class TokenService {
                 token.setProject(tokenProject);
             }*/
             tokenList.add(token);
+        }
+        try {
+            String pvoStr = JSON.toJSONString(tokenList, SerializerFeature.WriteNullStringAsEmpty);
+            redisService.set(cacheKey, pvoStr, 1, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("topTokens redis write error：{}", e.fillInStackTrace());
         }
         return tokenList;
     }
