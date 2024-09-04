@@ -1,14 +1,19 @@
 package com.metabitlab.taibiex.privateapi.fetcher;
 
+import com.alibaba.fastjson2.JSON;
 import com.metabitlab.taibiex.privateapi.errors.MissSourceException;
+import com.metabitlab.taibiex.privateapi.errors.ParseCacheException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.DgsConstants;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.service.V3PoolService;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TransactionsSubgraphFetcher;
+import com.metabitlab.taibiex.privateapi.util.RedisService;
 import com.netflix.graphql.dgs.*;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +29,14 @@ public class V3PoolDataFetcher {
 
     @Autowired
     TransactionsSubgraphFetcher transactionsSubgraphFetcher;
+
+    @Autowired
+    RedisService redisService;
+
+    /**
+     * The time-to-live for the V3 transactions cache in seconds.
+     */
+    private final int V3TRANSACTIONS_CACHE_TTL = 10;
 
     @DgsQuery(field = "v3Pool")
     public V3Pool getV3Pool(@InputArgument Chain chain, @InputArgument String address) {
@@ -84,20 +97,53 @@ public class V3PoolDataFetcher {
         String address = pool.getAddress();
 
         // 将 V3Pool 的地址作为 Subgraphs 中 Pool 的 ID 使用
-        List<PoolTransaction> addList = transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, chain, address);
-        List<PoolTransaction> removeList = transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, chain, address);
-        List<PoolTransaction> swapsList = transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, chain, address);
-        
-        return Stream.of(addList, removeList, swapsList)
-                .flatMap(List::stream)
-                .sorted(new Comparator<PoolTransaction>() {
-                    @Override
-                    public int compare(PoolTransaction o1, PoolTransaction o2) {
-                        return o2.getTimestamp() - o1.getTimestamp();
-                    }
-                })
-                .limit(first)
-                .toList();
+        final String addCacheKey = "v3Transactions:" + chain + ":add:" + address;
+        final String removeCacheKey = "v3Transactions:" + chain + ":remove:" + address;
+        final String swapsCacheKey = "v3Transactions:" + chain + ":swaps:" + address;
+
+        try {
+            List<PoolTransaction> addList = null;
+            Object wrappedAddList = redisService.get(addCacheKey);
+            if (wrappedAddList != null) {
+                addList = JSON.parseArray((String) wrappedAddList, PoolTransaction.class);
+            } else {
+                addList = Optional.ofNullable(transactionsSubgraphFetcher.mintsTransactions(0, first, cursor, chain, address)).orElse(List.of());
+                redisService.set(addCacheKey, JSON.toJSONString(addList), V3TRANSACTIONS_CACHE_TTL, TimeUnit.SECONDS);
+            }
+
+            List<PoolTransaction> removeList = null;
+            Object wrappedRemoveList = redisService.get(removeCacheKey);
+            if (wrappedRemoveList != null) {
+                removeList = JSON.parseArray((String) wrappedRemoveList, PoolTransaction.class);
+            } else {
+                removeList = Optional.ofNullable(transactionsSubgraphFetcher.burnsTransactions(0, first, cursor, chain, address)).orElse(List.of());
+                redisService.set(removeCacheKey, JSON.toJSONString(removeList), V3TRANSACTIONS_CACHE_TTL,
+                        TimeUnit.SECONDS);
+            }
+
+            List<PoolTransaction> swapsList = null;
+            Object wrappedSwapsList = redisService.get(swapsCacheKey);
+            if (wrappedSwapsList != null) {
+                swapsList = JSON.parseArray((String) wrappedSwapsList, PoolTransaction.class);
+            } else {
+                swapsList = Optional.ofNullable(transactionsSubgraphFetcher.swapsTransactions(0, first, cursor, chain, address)).orElse(List.of());
+                redisService.set(swapsCacheKey, JSON.toJSONString(swapsList), V3TRANSACTIONS_CACHE_TTL,
+                        TimeUnit.SECONDS);
+            }
+
+            return Stream.of(addList, removeList, swapsList)
+                    .flatMap(List::stream)
+                    .sorted(new Comparator<PoolTransaction>() {
+                        @Override
+                        public int compare(PoolTransaction o1, PoolTransaction o2) {
+                            return o2.getTimestamp() - o1.getTimestamp();
+                        }
+                    })
+                    .limit(first)
+                    .toList();
+        } catch (Exception e) {
+            throw new ParseCacheException("Error parsing cache with chain", chain.name());
+        }
     }
 
     @DgsData(parentType = DgsConstants.V3POOL.TYPE_NAME)
