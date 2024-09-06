@@ -93,27 +93,25 @@ public class TokenService {
 
     public List<Token> tokens(List<ContractInput> contractInputs) {
 
-        List<com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> subGraphTokens =
-                tokenSubgraphFetcher.tokens(null, null, null, null,
-                        ObjectUtils.isEmpty(contractInputs)?null:
-                        new Token_filter(){{
-                            setId_in(contractInputs.stream().map(ContractInput::getAddress).map(String::toLowerCase).toList());
-                        }});
-
         List<Token> tokenList = new ArrayList<>();
-        for (com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token subGraphToken : subGraphTokens) {
-            Token token = CGlibMapper.mapper(subGraphToken, Token.class);
-            token.setAddress(subGraphToken.getId());
-            token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
-            token.setChain(TABI);
-            token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
-            token.setDecimals(subGraphToken.getDecimals().intValue());
-            tokenList.add(token);
+
+        for (ContractInput contractInput : contractInputs) {
+            tokenList.add(token(contractInput.getChain(), contractInput.getAddress()));
         }
+
         return tokenList;
     }
 
     public Token token(Chain chain, String address) {
+        String cacheKey = "token_" + chain + address;
+        try {
+            Object token = redisService.get(cacheKey);
+            if (null != token) {
+                return JSONObject.parseObject(token.toString(), Token.class);
+            }
+        } catch (Exception e) {
+            log.error("tokens redis read error：{}", e.fillInStackTrace());
+        }
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token subGraphToken = tokenSubgraphFetcher
                 .token(address);
         if (subGraphToken == null) {
@@ -124,6 +122,13 @@ public class TokenService {
         token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
         token.setChain(TABI);
         token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
+
+        try {
+            String pvoStr = JSON.toJSONString(token, SerializerFeature.WriteNullStringAsEmpty);
+            redisService.set(cacheKey, pvoStr, 2, TimeUnit.MINUTES);
+        } catch (Exception e){
+            log.error("tokens redis write error：{}", e.fillInStackTrace());
+        }
         return token;
     }
 
