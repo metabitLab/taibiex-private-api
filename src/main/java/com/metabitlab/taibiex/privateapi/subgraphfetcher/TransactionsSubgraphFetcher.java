@@ -74,6 +74,9 @@ public class TransactionsSubgraphFetcher {
                 builder.build(),
                 new MintsProjectionRoot<>()
                         .id()
+                        .transaction()
+                        .id()
+                        .parent()
                         .amount0()
                         .amount1()
                         .amountUSD()
@@ -115,7 +118,7 @@ public class TransactionsSubgraphFetcher {
             transaction.setChain(chain);
             transaction.setProtocolVersion(ProtocolVersion.V3);
             transaction.setType(PoolTransactionType.ADD);
-            transaction.setHash(item.getOrigin());
+            transaction.setHash(item.getTransaction().getId());
             transaction.setTimestamp(item.getTimestamp().intValue());
             transaction.setUsdValue(new Amount() {
                 {
@@ -175,6 +178,9 @@ public class TransactionsSubgraphFetcher {
                 builder.build(),
                 new BurnsProjectionRoot<>()
                         .id()
+                        .transaction()
+                        .id()
+                        .parent()
                         .amount0()
                         .amount1()
                         .amountUSD()
@@ -216,7 +222,7 @@ public class TransactionsSubgraphFetcher {
             transaction.setChain(chain);
             transaction.setProtocolVersion(ProtocolVersion.V3);
             transaction.setType(PoolTransactionType.REMOVE);
-            transaction.setHash(item.getOrigin());
+            transaction.setHash(item.getTransaction().getId());
             transaction.setTimestamp(item.getTimestamp().intValue());
             transaction.setUsdValue(new Amount() {
                 {
@@ -314,6 +320,9 @@ public class TransactionsSubgraphFetcher {
                 builder.build(),
                 new SwapsProjectionRoot<>()
                         .id()
+                        .transaction()
+                        .id()
+                        .parent()
                         .amount0()
                         .amount1()
                         .amountUSD()
@@ -355,7 +364,7 @@ public class TransactionsSubgraphFetcher {
             transaction.setChain(chain);
             transaction.setProtocolVersion(ProtocolVersion.V3);
             transaction.setType(PoolTransactionType.SWAP);
-            transaction.setHash(item.getOrigin());
+            transaction.setHash(item.getTransaction().getId());
             transaction.setTimestamp(item.getTimestamp().intValue());
             transaction.setUsdValue(new Amount() {
                 {
