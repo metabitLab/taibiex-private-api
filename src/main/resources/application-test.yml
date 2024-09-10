@@ -31,10 +31,13 @@ spring:
   data:
     redis:
       port: 6379
-      host: localhost
+      host: redis-cache-us-east1-1-bpqedb.serverless.use1.cache.amazonaws.com
       database: 2
+      cluster:
+        nodes: redis-cache-us-east1-1-bpqedb.serverless.use1.cache.amazonaws.com:6379
+      ssl:
+        enabled: true
       connect-timeout: 5000
-      #password:
 
 tabiscan:
   api-domain:
