@@ -239,6 +239,12 @@
             </properties>
         </profile>
         <profile>
+            <id>test-v2</id>
+            <properties>
+                <environment>test-v2</environment>
+            </properties>
+        </profile>
+        <profile>
             <id>prod</id>
             <properties>
                 <environment>prod</environment>
