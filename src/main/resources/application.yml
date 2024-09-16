@@ -6,7 +6,3 @@ dgs:
   graphql:
     schema-locations:
       - classpath*:graphql-api/**/*.graphql
-
-app:
-  subgraphs:
-    endpoint: http://18.142.237.63:8000/subgraphs/name/tabi/uniswap-v3

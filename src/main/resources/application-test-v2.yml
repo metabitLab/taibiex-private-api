@@ -43,3 +43,7 @@ tabiscan:
   api-domain:
     # NOTE: 不同环境的 api domain 地址可能不同，这里用于查询用户余额等功能
     url: https://tabiv2-test.tabiscan.com
+
+app:
+  subgraphs:
+    endpoint: http://18.136.213.241:8000/subgraphs/name/tabiV2/uniswap-v3
