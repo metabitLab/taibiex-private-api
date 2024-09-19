@@ -10,10 +10,11 @@ import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.OrderDire
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_filter;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token_orderBy;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import com.metabitlab.taibiex.privateapi.util.RedisService;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -31,6 +32,9 @@ public class TokenService {
     private final RedisService redisService;
 
     private final static Chain TABI = Chain.ETHEREUM;
+
+    @Value("${app.wtabi}")
+    private String wtabi;
 
     public TokenService(TokenSubgraphFetcher tokenSubgraphFetcher, RedisService redisService) {
         this.tokenSubgraphFetcher = tokenSubgraphFetcher;
@@ -138,7 +142,7 @@ public class TokenService {
 
         if (address == null) {
             // NOTE: 当 Token 的地址为 null 时, 如何获取主网币的信息
-            t = tokenSubgraphFetcher.token("0x6290b1db448306a4422a78c28a52e30fee68cf76");
+            t = tokenSubgraphFetcher.token(wtabi.toLowerCase());
         } else {
             t = tokenSubgraphFetcher.token(address.toLowerCase());
         }
