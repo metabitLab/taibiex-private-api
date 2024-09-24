@@ -17,11 +17,13 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
 
 import java.util.*;
 import java.util.Base64.Encoder;
 import java.util.concurrent.TimeUnit;
+
+import static com.metabitlab.taibiex.privateapi.util.Constants.TABI;
+import static com.metabitlab.taibiex.privateapi.util.Constants.NATIVE_TOKEN_NAME;
 
 @Log4j2
 @Service
@@ -30,8 +32,6 @@ public class TokenService {
     private final TokenSubgraphFetcher tokenSubgraphFetcher;
 
     private final RedisService redisService;
-
-    private final static Chain TABI = Chain.ETHEREUM;
 
     @Value("${app.wtabi}")
     private String wtabi;
@@ -71,7 +71,7 @@ public class TokenService {
         for (com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token subGraphToken : subGraphTokens) {
             Token token = CGlibMapper.mapper(subGraphToken, Token.class);
             token.setAddress(subGraphToken.getId());
-            token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
+            token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase(NATIVE_TOKEN_NAME)? TokenStandard.NATIVE:TokenStandard.ERC20);
             token.setChain(TABI);
             token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
 
@@ -106,6 +106,35 @@ public class TokenService {
         return tokenList;
     }
 
+    public List<Token> tokens(String searchQuery, List<Chain> chains) {
+        List<com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> tokens = tokenSubgraphFetcher
+                .tokens(null, null, null, null, new Token_filter() {
+                    {
+                        setName_contains_nocase(searchQuery);
+                    }
+                });
+
+        Encoder encoder = Base64.getEncoder();
+
+        List<Token> list = tokens.stream()
+                .map(item -> {
+                    String tokenId = encoder.encodeToString(
+                            ("Token:" + TABI + "_" + item.getId()).getBytes());
+
+                    Token token = CGlibMapper.mapper(item, Token.class);
+                    token.setAddress(item.getId());
+                    token.setStandard(item.getSymbol().equalsIgnoreCase(NATIVE_TOKEN_NAME) ? TokenStandard.NATIVE
+                            : TokenStandard.ERC20);
+                    token.setChain(TABI);
+                    token.setId(tokenId);
+
+                    return token;
+                })
+                .toList();
+
+        return list;
+    }
+
     public Token token(Chain chain, String address) {
         String cacheKey = "token_" + chain + address;
         try {
@@ -123,7 +152,7 @@ public class TokenService {
         }
         Token token = CGlibMapper.mapper(subGraphToken, Token.class);
         token.setAddress(subGraphToken.getId());
-        token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase("TABI")? TokenStandard.NATIVE:TokenStandard.ERC20);
+        token.setStandard(subGraphToken.getSymbol().equalsIgnoreCase(NATIVE_TOKEN_NAME)? TokenStandard.NATIVE:TokenStandard.ERC20);
         token.setChain(TABI);
         token.setId(Base64.getEncoder().encodeToString(("Token:TABI_" + subGraphToken.getId()).getBytes()));
 
@@ -161,7 +190,7 @@ public class TokenService {
                 setId(tokenId);
                 setChain(chain);
                 setAddress(address);
-                setStandard(TokenStandard.ERC20);
+                setStandard(t.getSymbol().equalsIgnoreCase(NATIVE_TOKEN_NAME)? TokenStandard.NATIVE:TokenStandard.ERC20);
                 setName(t.getName());
                 setSymbol(t.getSymbol());
                 setDecimals(t.getDecimals().intValue());
