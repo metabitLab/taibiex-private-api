@@ -142,7 +142,7 @@ public class V3PoolDataFetcher {
                     .limit(first)
                     .toList();
         } catch (Exception e) {
-            throw new ParseCacheException("Error parsing cache with chain", chain.name());
+            throw new ParseCacheException("Error occurs on transactions cache with chain", chain.name());
         }
     }
 

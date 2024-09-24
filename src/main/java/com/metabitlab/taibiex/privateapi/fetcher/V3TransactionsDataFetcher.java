@@ -93,7 +93,7 @@ public class V3TransactionsDataFetcher {
                     .limit(first)
                     .toList();
         } catch (Exception e) {
-            throw new ParseCacheException("Error parsing cache with chain", TABI.name());
+            throw new ParseCacheException("Error occurs on v3Transactions cache with chain", TABI.name());
         }
     }
 }

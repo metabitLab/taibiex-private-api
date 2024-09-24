@@ -186,7 +186,7 @@ public class TokenDataFetcher {
 
             return tokenProject;
         } catch (Exception e) {
-            throw new ParseCacheException("Error parsing cache with Token ID", t.getId());
+            throw new ParseCacheException("Error occurs on project cache with Token ID", t.getId());
         }
     }
 
