@@ -30,8 +30,7 @@ import com.netflix.graphql.dgs.DgsDataFetchingEnvironment;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 
-import graphql.execution.DataFetcherResult;
-import io.vavr.Tuple2;
+import static com.metabitlab.taibiex.privateapi.util.Constants.TABI;
 
 /**
  * This class is responsible for fetching portfolios data.
@@ -51,8 +50,6 @@ public class PortfoliosDataFetcher {
 
     @Autowired
     TokenService tokenService;
-
-    private final static Chain TABI = Chain.ETHEREUM;
 
 	@DgsQuery
     public List<Portfolio> portfolios(

@@ -11,6 +11,8 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 
+import static com.metabitlab.taibiex.privateapi.util.Constants.TABI;
+
 /**
  * This is the IsV3SubgraphStaleDataFetcher class.
  * 
@@ -20,8 +22,6 @@ import com.netflix.graphql.dgs.InputArgument;
 public class IsV3SubgraphStaleDataFetcher {
     @Autowired
     BundleSubgraphFetcher bundleSubgraphFetcher;
-
-    private final static Chain TABI = Chain.ETHEREUM;
 
     @DgsQuery
     public Boolean isV3SubgraphStale(
