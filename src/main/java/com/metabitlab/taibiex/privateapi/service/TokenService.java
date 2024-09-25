@@ -110,7 +110,18 @@ public class TokenService {
         List<com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> tokens = tokenSubgraphFetcher
                 .tokens(null, null, null, null, new Token_filter() {
                     {
-                        setName_contains_nocase(searchQuery);
+                        setOr(List.of(
+                            new Token_filter() {
+                                {
+                                    setName_contains_nocase(searchQuery);
+                                }
+                            },
+                            new Token_filter() {
+                                {
+                                    setId(searchQuery);
+                                }
+                            }
+                        ));
                     }
                 });
 
