@@ -44,7 +44,7 @@ public class SearchTokensDataFetcher {
             @InputArgument List<Chain> chains) {
 
         // NOTE: [已确认] 参数 chain 未使用, 仅支持 TABI
-        if (chains.size() > 1 || chains.get(0) != TABI) {
+        if (chains != null && (chains.size() > 1 || chains.get(0) != TABI)) {
             throw new UnSupportChainException("Those chains are not supported", chains);
         }
 
