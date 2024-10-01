@@ -36,7 +36,7 @@ spring:
 tabiscan:
   api-domain:
     # NOTE: 不同环境的 api domain 地址可能不同，这里用于查询用户余额等功能
-    url: https://testnet-api2.tabiscan.com
+    url: https://tabiv2-test.tabiscan.com
 
 app:
   subgraphs:
