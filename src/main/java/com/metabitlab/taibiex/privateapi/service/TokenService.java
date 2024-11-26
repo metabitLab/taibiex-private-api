@@ -180,7 +180,7 @@ public class TokenService {
                 Chain chain, String address) {
         final com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token t;
 
-        if (address == null) {
+        if (address == null || address.isEmpty()) {
             // NOTE: 当 Token 的地址为 null 时, 如何获取主网币的信息
             t = tokenSubgraphFetcher.token(wtabi.toLowerCase());
         } else {

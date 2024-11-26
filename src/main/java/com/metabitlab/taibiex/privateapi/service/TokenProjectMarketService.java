@@ -4,10 +4,17 @@ import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.Base64.Encoder;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.metabitlab.taibiex.privateapi.errors.UnSupportDurationException;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Amount;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
@@ -20,6 +27,7 @@ import com.metabitlab.taibiex.privateapi.subgraphfetcher.BundleSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.TokenPriceSubgraphFetcher;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Bundle;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.TokenDayData;
+import com.metabitlab.taibiex.privateapi.util.RedisService;
 
 import io.vavr.Tuple2;
 
@@ -30,6 +38,8 @@ import io.vavr.Tuple2;
  */
 @Service
 public class TokenProjectMarketService {
+    private static final Logger log = LoggerFactory.getLogger(TokenProjectMarketService.class);
+
     @Autowired
     TokenProjectService tokenProjectService;
 
@@ -41,10 +51,24 @@ public class TokenProjectMarketService {
 
     @Autowired
     TokenPriceSubgraphFetcher tokenPriceSubgraphFetcher;
+
+    @Autowired
+    RedisService redisService;
     
     public TokenProjectMarket getMarketFromToken(Token token) {
         if (token == null) {
             throw new IllegalArgumentException("Token cannot be null");
+        }
+
+        String cacheKey = "tokenProjectMarket:" +  token.getChain() + "_" + token.getSymbol() + "_" + token.getAddress();
+
+        try {
+            Object tokenProjectMarket = redisService.get(cacheKey);
+            if (null != tokenProjectMarket) {
+                return JSONObject.parseObject(tokenProjectMarket.toString(), TokenProjectMarket.class);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         Tuple2<com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token, com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token> tuple = tokenService
@@ -126,6 +150,13 @@ public class TokenProjectMarketService {
                 setPriceHistory(priceHistory);
             }
         };
+
+        try {
+            String pvoStr = JSON.toJSONString(onlyOneMarket, SerializerFeature.WriteNullStringAsEmpty);
+            redisService.set(cacheKey, pvoStr, 2, TimeUnit.MINUTES);
+        } catch (Exception e) {
+           e.fillInStackTrace();
+        }
 
         return onlyOneMarket;
     }
