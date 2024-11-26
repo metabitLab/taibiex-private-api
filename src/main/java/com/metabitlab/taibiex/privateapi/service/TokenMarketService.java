@@ -1,10 +1,16 @@
 package com.metabitlab.taibiex.privateapi.service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Token;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.*;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.util.DateUtil;
+import com.metabitlab.taibiex.privateapi.util.RedisService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -15,10 +21,12 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class TokenMarketService {
 
+    private static final Logger log = LoggerFactory.getLogger(TokenMarketService.class);
     private final TokenHourDataSubgraphFetcher tokenHourDataSubgraphFetcher;
 
     private final TokenDayDataSubgraphFetcher tokenDayDataSubgraphFetcher;
@@ -28,6 +36,9 @@ public class TokenMarketService {
     private final TokenSubgraphFetcher tokenSubgraphFetcher;
 
     private final BundleSubgraphFetcher bundleSubgraphFetcher;
+
+    @Autowired
+    private RedisService redisService;
 
     public TokenMarketService(TokenHourDataSubgraphFetcher tokenHourDataSubgraphFetcher,
                               TokenDayDataSubgraphFetcher tokenDayDataSubgraphFetcher,
@@ -42,6 +53,18 @@ public class TokenMarketService {
     }
 
     public TokenMarket tokenMarket(Token token, Currency currency) {
+
+        String cacheKey = "topMarket:" +  token.getChain() + "_" + token.getSymbol() + "_" + token.getAddress();
+
+        try {
+            Object topTokens = redisService.get(cacheKey);
+            if (null != topTokens) {
+                return JSONObject.parseObject(topTokens.toString(), TokenMarket.class);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
         TokenMarket tokenMarket = new TokenMarket();
 
         tokenMarket.setId(Base64.getEncoder().encodeToString(("TokenMarket:TABI_" + token.getAddress().toLowerCase() + "_" + token.getSymbol()).getBytes()));
@@ -52,6 +75,8 @@ public class TokenMarketService {
 
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token subgraphToken
                 = tokenSubgraphFetcher.token(token.getAddress());
+        log.info("fetch token from Subgraph, token symbol:{}, token address:{} ", token.getSymbol(), token.getAddress());
+        log.info("tokenSubgraphFetcher.token: {}", subgraphToken);
         // price
         Bundle bundle = bundleSubgraphFetcher.bundle();
         double price = bundle.getEthPriceUSD().multiply(subgraphToken.getDerivedETH()).doubleValue();
@@ -71,6 +96,14 @@ public class TokenMarketService {
                 setValue(subgraphToken.getTotalValueLockedUSD().doubleValue());
             }
         });
+
+        try {
+            String pvoStr = JSON.toJSONString(tokenMarket, SerializerFeature.WriteNullStringAsEmpty);
+            redisService.set(cacheKey, pvoStr, 2, TimeUnit.MINUTES);
+        } catch (Exception e) {
+           e.fillInStackTrace();
+        }
+
         return tokenMarket;
     }
 

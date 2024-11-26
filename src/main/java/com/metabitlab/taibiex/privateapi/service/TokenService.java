@@ -51,7 +51,7 @@ public class TokenService {
                 return JSONObject.parseArray(topTokens.toString(), Token.class);
             }
         } catch (Exception e) {
-            log.error("topTokens redis read error：{}", e.fillInStackTrace());
+            log.error("topTokens redis read error：{}", e.getMessage());
         }
 
         if (null == orderBy){
@@ -90,7 +90,7 @@ public class TokenService {
             String pvoStr = JSON.toJSONString(tokenList, SerializerFeature.WriteNullStringAsEmpty);
             redisService.set(cacheKey, pvoStr, 1, TimeUnit.MINUTES);
         } catch (Exception e) {
-            log.error("topTokens redis write error：{}", e.fillInStackTrace());
+            log.error("topTokens redis write error：{}", e.getMessage());
         }
         return tokenList;
     }
@@ -147,14 +147,14 @@ public class TokenService {
     }
 
     public Token token(Chain chain, String address) {
-        String cacheKey = "token_" + chain + address;
+        String cacheKey = "token:" + chain + address;
         try {
             Object token = redisService.get(cacheKey);
             if (null != token) {
                 return JSONObject.parseObject(token.toString(), Token.class);
             }
         } catch (Exception e) {
-            log.error("tokens redis read error：{}", e.fillInStackTrace());
+            log.error(e.fillInStackTrace());
         }
         com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.Token subGraphToken = tokenSubgraphFetcher
                 .token(address);

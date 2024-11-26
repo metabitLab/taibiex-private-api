@@ -41,5 +41,5 @@ tabiscan:
 app:
   subgraphs:
     # endpoint: http://18.142.237.63:8000/subgraphs/name/tabi/uniswap-v3
-    endpoint: http://18.136.213.241:8000/subgraphs/name/tabiV2/uniswap-v3
+    endpoint: http://18.139.78.65:8000/subgraphs/name/tabiV2/uniswap-v3
   wtabi: "0xCde9c6ad3f82f322AC86DC63eFF63bC405072F95"
