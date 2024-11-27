@@ -18,9 +18,7 @@ import org.springframework.util.ObjectUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Base64;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -427,6 +425,15 @@ public class TokenMarketService {
     }
 
     private Amount getMinutePricePercentChange(TokenMarket tokenMarket, String tokenAddress) {
+        String cacheKey = "minutePricePercentChange:" + tokenAddress;
+        try {
+            Object amount = redisService.get(cacheKey);
+            if (null != amount) {
+                return JSONObject.parseObject(amount.toString(), Amount.class);
+            }
+        } catch (Exception e) {
+            log.error("getMinutePricePercentChange redis read error：{}", e.getMessage());
+        }
         List<TokenMinuteData> tokenHourData = tokenMinuteDataSubgraphFetcher.tokenMinuteDatas(0, 6,
                 TokenMinuteData_orderBy.periodStartUnix,
                 OrderDirection.desc,
@@ -443,17 +450,33 @@ public class TokenMarketService {
         BigDecimal change = new BigDecimal(String.valueOf(tokenHourData.get(0).getPriceUSD()))
                 .subtract(new BigDecimal(String.valueOf(tokenHourData.get(5).getPriceUSD())));
         BigDecimal percentChange = change.divide(new BigDecimal(String.valueOf(tokenHourData.get(5).getPriceUSD())));
-        return new Amount() {
+        Amount amount = new Amount() {
             {
                 setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
                 setCurrency(Currency.USD);
                 setValue(percentChange.doubleValue());
             }
         };
+        try {
+            String pvoStr = JSON.toJSONString(amount, SerializerFeature.WriteNullStringAsEmpty);
+            redisService.set(cacheKey, pvoStr);
+        } catch (Exception e) {
+            log.error("get redis write error：{}", e.getMessage());
+        }
+        return amount;
     }
 
 
     private Amount getHourPricePercentChange(TokenMarket tokenMarket, String tokenAddress) {
+        String cacheKey = "hourPricePercentChange"  + ":" + tokenAddress;
+        try {
+            Object amount = redisService.get(cacheKey);
+            if (null != amount) {
+                return JSONObject.parseObject(amount.toString(), Amount.class);
+            }
+        } catch (Exception e) {
+            log.error("getHourPricePercentChange redis read error：{}", e.getMessage());
+        }
         List<TokenHourData> tokenHourData = tokenHourDataSubgraphFetcher.tokenHourDatas(0, 2,
                 TokenHourData_orderBy.periodStartUnix,
                 OrderDirection.desc,
@@ -476,13 +499,20 @@ public class TokenMarketService {
             BigDecimal percentChange = change.divide(pricePrevious, 2, RoundingMode.HALF_UP);
 
             // 返回百分比变化
-            return new Amount() {
+            Amount amount = new Amount() {
                 {
                     setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
                     setCurrency(Currency.USD);
                     setValue(percentChange.doubleValue());
                 }
             };
+            try {
+                String pvoStr = JSON.toJSONString(amount, SerializerFeature.WriteNullStringAsEmpty);
+                redisService.set(cacheKey, pvoStr);
+            } catch (Exception e) {
+                log.error("getHourPricePercentChange redis write error：{}", e.getMessage());
+            }
+            return amount;
         } else {
             // 如果价格为零，可以返回null或者处理这种情况
             return null;
@@ -491,6 +521,17 @@ public class TokenMarketService {
 
 
     private Amount getDayPricePercentChange(TokenMarket tokenMarket, String tokenAddress) {
+
+        String cacheKey = "dayPricePercentChange"  + ":" + tokenAddress;
+
+        try {
+            Object amount = redisService.get(cacheKey);
+            if (null != amount) {
+                return JSONObject.parseObject(amount.toString(), Amount.class);
+            }
+        } catch (Exception e) {
+            log.error("getDayPricePercentChange redis read error：{}", e.getMessage());
+        }
         List<TokenDayData> tokenDayDatas = tokenDayDataSubgraphFetcher.tokenDayDatas(0, 2,
                 TokenDayData_orderBy.date,
                 OrderDirection.desc,
@@ -511,13 +552,20 @@ public class TokenMarketService {
             BigDecimal percentChange = change.divide(pricePrevious, 2, RoundingMode.HALF_UP);
 
             // 返回百分比变化
-            return new Amount() {
+            Amount amount = new Amount() {
                 {
                     setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
                     setCurrency(Currency.USD);
                     setValue(percentChange.doubleValue());
                 }
             };
+            try {
+                String pvoStr = JSON.toJSONString(amount, SerializerFeature.WriteNullStringAsEmpty);
+                redisService.set(cacheKey, pvoStr);
+            } catch (Exception e) {
+                log.error("getDayPricePercentChange redis write error：{}", e.getMessage());
+            }
+            return amount;
         } else {
             // 如果价格为零，可以返回null或者处理这种情况
             return null;
@@ -525,8 +573,20 @@ public class TokenMarketService {
     }
 
     private Amount getWeekPricePercentChange(TokenMarket tokenMarket, String tokenAddress) {
+
+        String cacheKey = "weekPricePercentChange"  + ":" + tokenAddress;
+        try {
+            Object amount = redisService.get(cacheKey);
+            if (null != amount) {
+                return JSONObject.parseObject(amount.toString(), Amount.class);
+            }
+        } catch (Exception e) {
+            log.error("getWeekPricePercentChange redis read error：{}", e.getMessage());
+        }
+
         String currentId = tokenAddress.toLowerCase() + ":" + DateUtil.getStartOfDayTimestamp() / 86400;
         String weekDataId = tokenAddress.toLowerCase() + ":" + DateUtil.getAneWeekAgoMidnightTimestamp() / 86400;
+
         TokenDayData tokenDayData = tokenDayDataSubgraphFetcher.tokenDayData(currentId);
         TokenDayData tokenDayDataWeekAgo = tokenDayDataSubgraphFetcher.tokenDayData(weekDataId);
         if (tokenDayData != null && tokenDayDataWeekAgo != null) {
@@ -539,13 +599,20 @@ public class TokenMarketService {
             BigDecimal change = new BigDecimal(String.valueOf(tokenDayData.getPriceUSD()))
                     .subtract(new BigDecimal(String.valueOf(tokenDayDataWeekAgo.getPriceUSD())));
             BigDecimal percentChange = change.divide(new BigDecimal(String.valueOf(tokenDayData.getPriceUSD())));
-            return new Amount() {
+            Amount amount = new Amount() {
                 {
                     setId(getAmountIdEncoded(percentChange.doubleValue(), "USD"));
                     setCurrency(Currency.USD);
                     setValue(percentChange.doubleValue());
                 }
             };
+            try {
+                String pvoStr = JSON.toJSONString(amount, SerializerFeature.WriteNullStringAsEmpty);
+                redisService.set(cacheKey, pvoStr);
+            } catch (Exception e) {
+                log.error("getWeekPricePercentChange redis write error：{}", e.getMessage());
+            }
+            return amount;
         }
         return null;
     }
