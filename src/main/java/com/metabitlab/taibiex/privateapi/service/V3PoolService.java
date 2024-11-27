@@ -1,19 +1,28 @@
 package com.metabitlab.taibiex.privateapi.service;
 
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson2.JSON;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.graphqlapi.codegen.types.Currency;
 import com.metabitlab.taibiex.privateapi.subgraphfetcher.*;
 import com.metabitlab.taibiex.privateapi.subgraphsclient.codegen.types.*;
 import com.metabitlab.taibiex.privateapi.util.DateUtil;
+import com.metabitlab.taibiex.privateapi.util.RedisService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 public class V3PoolService {
+
+    private final RedisService redisService;
 
     private final TokenService tokenService;
 
@@ -27,12 +36,13 @@ public class V3PoolService {
 
     private final TickSubgraphFetcher tickSubgraphFetcher;
 
-    public V3PoolService(TokenService tokenService,
+    public V3PoolService(RedisService redisService, TokenService tokenService,
                          PoolsSubgraphFetcher poolsSubgraphFetcher,
                          PoolDayDataSubgraphFetcher poolDayDataSubgraphFetcher,
                          PoolHourDataSubgraphFetcher poolHourDataSubgraphFetcher,
                          PoolMinuteDataSubgraphFetcher poolMinuteDataSubgraphFetcher,
                          TickSubgraphFetcher tickSubgraphFetcher) {
+        this.redisService = redisService;
         this.tokenService = tokenService;
         this.poolsSubgraphFetcher = poolsSubgraphFetcher;
         this.poolDayDataSubgraphFetcher = poolDayDataSubgraphFetcher;
@@ -450,11 +460,20 @@ public class V3PoolService {
     }
 
     public List<V3Pool> topV3Pools(Chain chain, Integer first, Float tvlCursor, String tokenFilter) {
+        String cacheKey = "topV3Pools:" + chain + "-" + first + "-" + tvlCursor + "-" + tokenFilter;
+        try {
+            Object topTokens = redisService.get(cacheKey);
+            if (null != topTokens) {
+                return JSONObject.parseArray(topTokens.toString(), V3Pool.class);
+            }
+        } catch (Exception e){
+            log.error("topV3Pools redis read error：{}", e.getMessage());
+        }
         List<Pool> pools = poolsSubgraphFetcher.pools(0, first, Pool_orderBy.totalValueLockedUSD, OrderDirection.desc, null);
         if (pools.isEmpty()){
             return null;
         }
-        return pools.stream().map(pool -> {
+        List<V3Pool> v3Pools = pools.stream().map(pool -> {
             V3Pool v3Pool = new V3Pool();
             v3Pool.setAddress(pool.getId());
             v3Pool.setChain(Chain.TABI);
@@ -481,6 +500,14 @@ public class V3PoolService {
             v3Pool.setId(pool.getId());
             return v3Pool;
         }).collect(Collectors.toList());
+
+        try {
+            String pvoStr = com.alibaba.fastjson.JSON.toJSONString(v3Pools, SerializerFeature.WriteNullStringAsEmpty);
+            redisService.set(cacheKey, pvoStr, 2, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("TopV3Pool redis write error：{}", e.getMessage());
+        }
+        return v3Pools;
     }
 
     public List<V3Pool> v3PoolsForTokenPair(Chain chain, String token0, String token1) {

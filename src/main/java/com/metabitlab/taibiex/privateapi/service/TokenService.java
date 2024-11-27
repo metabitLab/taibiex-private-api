@@ -88,7 +88,7 @@ public class TokenService {
         }
         try {
             String pvoStr = JSON.toJSONString(tokenList, SerializerFeature.WriteNullStringAsEmpty);
-            redisService.set(cacheKey, pvoStr, 1, TimeUnit.MINUTES);
+            redisService.set(cacheKey, pvoStr, 2, TimeUnit.MINUTES);
         } catch (Exception e) {
             log.error("topTokens redis write error：{}", e.getMessage());
         }
