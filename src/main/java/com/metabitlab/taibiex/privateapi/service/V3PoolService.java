@@ -122,6 +122,15 @@ public class V3PoolService {
     }
 
     private Amount getWeekCumulativeVolume(V3Pool pool) {
+        String cacheKey = "V3PoolWeekCumulativeVolume:" + pool.getAddress();
+        try {
+            Object tokenProject = redisService.get(cacheKey);
+            if (null != tokenProject) {
+                return JSONObject.parseObject(tokenProject.toString(), Amount.class);
+            }
+        } catch (Exception e) {
+            log.error("week Cumulative Volume redis read error：{}", e.getMessage());
+        }
         long[] oneDayTimestamp = DateUtil.getLastDayTimestamp(7);
         List<String> ids = new ArrayList<>();
         for (long timestamp : oneDayTimestamp) {
@@ -142,10 +151,24 @@ public class V3PoolService {
         amount.setCurrency(Currency.USD);
         amount.setValue(totalVolume.doubleValue());
         amount.setId(getAmountIdEncoded(totalVolume.doubleValue(), "USD"));
+        try {
+            redisService.set(cacheKey, JSONObject.toJSONString(amount), 10, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("week cumulative Volume redis write error：{}", e.getMessage());
+        }
         return amount;
     }
 
     private Amount getDayCumulativeVolume(V3Pool pool) {
+        String cacheKey = "V3PoolDayCumulativeVolume:" + pool.getAddress();
+        try {
+            Object tokenProject = redisService.get(cacheKey);
+            if (null != tokenProject) {
+                return JSONObject.parseObject(tokenProject.toString(), Amount.class);
+            }
+        } catch (Exception e) {
+            log.error("cumulative Volume redis read error：{}", e.getMessage());
+        }
         long[] longs = DateUtil.get24HourTimestamp();
         List<String> ids = new ArrayList<>();
         for (long timestamp : longs) {
@@ -166,6 +189,11 @@ public class V3PoolService {
         amount.setCurrency(Currency.USD);
         amount.setValue(totalVolume.doubleValue());
         amount.setId(getAmountIdEncoded(totalVolume.doubleValue(), "USD"));
+        try {
+            redisService.set(cacheKey, JSONObject.toJSONString(amount), 10, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("cumulative Volume redis write error：{}", e.getMessage());
+        }
         return amount;
     }
 
